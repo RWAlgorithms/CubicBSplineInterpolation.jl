@@ -22,8 +22,8 @@ A1 = ITP.IntervalConversion(a1, b1, N1)
 A2 = ITP.IntervalConversion(a2, b2, N2)
 
 # query
-Nq1 = N1
-Nq2 = N2
+Nq1 = N1*10
+Nq2 = N2*10
 aq1, bq1 = t_range1[4], t_range1[end-3]
 aq2, bq2 = t_range2[4], t_range2[end-3]
 tq_range1 = LinRange(aq1, bq1, Nq1)
@@ -51,5 +51,10 @@ PLT.figure(fig_num)
 fig_num += 1
 PLT.imshow(Sq)
 PLT.title("Oracle")
+
+# Timing
+x1 = tq_range1[342]
+x2 = tq_range2[432]
+@btime ITP.query_interior($x1, $x2, $itp2D);
 
 nothing

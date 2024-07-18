@@ -176,7 +176,8 @@ function get_coeffs(S::Matrix{T}, ϵ::T) where T <: AbstractFloat
         _get_coeffs!(yr, xr, ϵ)
     end
 
-    return reshape(Memory{T}(vec(Y)), size(Y))
+    #return reshape(Memory{T}(vec(Y)), size(Y))
+    return Y
 end
 
 # Note: could use a macro to generate the 25 terms.
@@ -276,8 +277,8 @@ end
 # package up.
 
 
-struct Interpolator2D{T <: AbstractFloat, RT <: AbstractArray}
-    coeffs::RT
+struct Interpolator2D{T <: AbstractFloat}
+    coeffs::Matrix{T}
     x1_query_cache::IntervalConversion{T}
     x2_query_cache::IntervalConversion{T}
 end
