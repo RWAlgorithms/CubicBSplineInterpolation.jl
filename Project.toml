@@ -1,0 +1,14 @@
+name = "CubicBSplineInterpolation"
+uuid = "cea239a1-aef7-4735-a0ad-35c493ad27cc"
+authors = ["Roy Chih Chung Wang"]
+version = "0.1.0"
+
+[compat]
+julia = "1.11"
+
+[extras]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["LinearAlgebra", "Test"]
