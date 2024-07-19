@@ -57,4 +57,59 @@ x1 = tq_range1[342]
 x2 = tq_range2[432]
 @btime ITP.query_interior($x1, $x2, $itp2D);
 
+
+# Interpolations.jl
+import Interpolations
+
+function setupclpartitionitp(
+    A::Matrix{T},
+    A_r,
+    A_λ,
+    ) where T <: AbstractFloat
+
+    real_itp = Interpolations.interpolate(A, Interpolations.BSpline(Interpolations.Cubic(Interpolations.Line(Interpolations.OnGrid()))))
+    #real_itp = Interpolations.interpolate(real.(A), Interpolations.BSpline(Interpolations.Quadratic(Interpolations.Line(Interpolations.OnGrid()))))
+    real_sitp = Interpolations.scale(real_itp, A_r, A_λ)
+    real_setp = Interpolations.extrapolate(real_sitp, zero(T)) # zero outside interp range.
+
+    return real_setp
+end
+
+itp = setupclpartitionitp(S, t_range1, t_range2)
+
+out_itp = itp(x1, x2)
+out_mine = ITP.query_interior(x1, x2, itp2D)
+out_oracle = f(x1,x2)
+
+@show abs(out_mine - out_oracle)
+@show abs(out_itp - out_oracle)
+
+@btime $f($x1, $x2)
+@btime $itp($x1, $x2)
+@btime ITP.query_interior($x1, $x2, $itp2D)
+
+"""
+julia> include("demo_2D.jl")
+Relative error in the interior query regions:
+norm(Sq - Yq) / norm(Sq) = 0.0006756997834280465
+43.253 ns (0 allocations: 0 bytes)
+abs(out_mine - out_oracle) = 4.213215210605026e-5
+abs(out_itp - out_oracle) = 4.213215210610577e-5
+14.506 ns (0 allocations: 0 bytes)
+30.822 ns (0 allocations: 0 bytes)
+42.948 ns (0 allocations: 0 bytes)
+
+# with N1 and N2, x10 each.
+julia> include("demo_2D.jl")
+Relative error in the interior query regions:
+norm(Sq - Yq) / norm(Sq) = 8.299799743547375e-5
+43.253 ns (0 allocations: 0 bytes)
+abs(out_mine - out_oracle) = 9.777807296468266e-9
+abs(out_itp - out_oracle) = 9.777807292998819e-9
+15.058 ns (0 allocations: 0 bytes)
+30.853 ns (0 allocations: 0 bytes)
+43.253 ns (0 allocations: 0 bytes)
+
+"""
+
 nothing
