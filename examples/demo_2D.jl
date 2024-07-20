@@ -1,16 +1,22 @@
+if !isdefined(Main, :CubicBSplineInterpolation)
+    include("a.jl")
+end
+
 # # 2D
+
 
 PLT.close("all")
 fig_num = 1
 
 const T = Float64
+#const T = Float32
 
 ϵ = eps(T)*100
-a1 = -4.0
-b1 = 3.45
+a1 = T(-4.0)
+b1 = T(3.45)
 N1 = 100
-a2 = -2.0
-b2 = 1.23
+a2 = T(-2.0)
+b2 = T(1.23)
 N2 = 113
 t_range1 = LinRange(a1, b1, N1)
 t_range2 = LinRange(a2, b2, N2)
@@ -61,7 +67,7 @@ x2 = tq_range2[432]
 # Interpolations.jl
 import Interpolations
 
-function setupclpartitionitp(
+function setup_itp(
     A::Matrix{T},
     A_r,
     A_λ,
@@ -75,7 +81,7 @@ function setupclpartitionitp(
     return real_setp
 end
 
-itp = setupclpartitionitp(S, t_range1, t_range2)
+itp = setup_itp(S, t_range1, t_range2)
 
 out_itp = itp(x1, x2)
 out_mine = ITP.query_interior(x1, x2, itp2D)
@@ -85,31 +91,33 @@ out_oracle = f(x1,x2)
 @show abs(out_itp - out_oracle)
 
 @btime $f($x1, $x2)
-@btime $itp($x1, $x2)
-@btime ITP.query_interior($x1, $x2, $itp2D)
+@btime $itp($x1, $x2) # From Interpolations.jl # does a little worse for Float32 on Ryzen 7 1700.
+@btime ITP.query_interior($x1, $x2, $itp2D) # The default method of this package. does a little worse for Float64 on Ryzen 7 1700.
+@btime ITP.query_interior_original($x1, $x2, $itp2D) # For reference.
 
 """
 julia> include("demo_2D.jl")
-Relative error in the interior query regions:
-norm(Sq - Yq) / norm(Sq) = 0.0006756997834280465
-43.253 ns (0 allocations: 0 bytes)
-abs(out_mine - out_oracle) = 4.213215210605026e-5
-abs(out_itp - out_oracle) = 4.213215210610577e-5
-14.506 ns (0 allocations: 0 bytes)
-30.822 ns (0 allocations: 0 bytes)
-42.948 ns (0 allocations: 0 bytes)
+    Relative error in the interior query regions:
+    norm(Sq - Yq) / norm(Sq) = 0.0006756997834280465
+    35.726 ns (0 allocations: 0 bytes)
+    abs(out_mine - out_oracle) = 4.213215210605026e-5
+    abs(out_itp - out_oracle) = 4.213215210610577e-5
+    14.506 ns (0 allocations: 0 bytes)
+    31.225 ns (0 allocations: 0 bytes)
+    35.726 ns (0 allocations: 0 bytes)
+    36.984 ns (0 allocations: 0 bytes)
 
-# with N1 and N2, x10 each.
-julia> include("demo_2D.jl")
-Relative error in the interior query regions:
-norm(Sq - Yq) / norm(Sq) = 8.299799743547375e-5
-43.253 ns (0 allocations: 0 bytes)
-abs(out_mine - out_oracle) = 9.777807296468266e-9
-abs(out_itp - out_oracle) = 9.777807292998819e-9
-15.058 ns (0 allocations: 0 bytes)
-30.853 ns (0 allocations: 0 bytes)
-43.253 ns (0 allocations: 0 bytes)
-
+julia> versioninfo()
+    Julia Version 1.11.0-rc1
+    Commit 3a35aec36d1 (2024-06-25 10:23 UTC)
+    Build Info:
+    Official https://julialang.org/ release
+    Platform Info:
+    OS: Linux (x86_64-linux-gnu)
+    CPU: 16 × AMD Ryzen 7 1700 Eight-Core Processor
+    WORD_SIZE: 64
+    LLVM: libLLVM-16.0.6 (ORCJIT, znver1)
+    Threads: 1 default, 0 interactive, 1 GC (on 16 virtual cores)
 """
 
 nothing
