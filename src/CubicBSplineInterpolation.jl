@@ -17,6 +17,6 @@ include("interval_transform.jl")
 include("cubic1D.jl")
 include("cubic2D.jl")
 
-export IntervalConversion, get_coeffs, query_interior, Interpolator1D, Interpolator2D
+export IntervalConversion, get_coeffs, query1D, query2D, Interpolator1D, Interpolator2D, Interpolator1DComplex, Interpolator2DComplex
 
 end # module CubicBSplineInterpolation
