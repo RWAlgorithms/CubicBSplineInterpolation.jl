@@ -37,7 +37,7 @@ import CubicBSplineInterpolation as ITP
     for Nq = N:Nq_max
         tq = LinRange(aq, bq, Nq)
         q_t = collect( ITP.query(u, c, A) for u in tq )
-        q3_t = collect( ITP.query_interior(u, itp1D) for u in tq )
+        q3_t = collect( ITP.query1D(u, itp1D) for u in tq )
         
         seq_test = q3_t[begin+3:end-3]
         seq_oracle = q_t[begin+3:end-3]

@@ -14,7 +14,8 @@ end
 
 
 include("interval_transform.jl")
-include("cubic.jl")
+include("cubic1D.jl")
+include("cubic2D.jl")
 
 export IntervalConversion, get_coeffs, query_interior, Interpolator1D, Interpolator2D
 
