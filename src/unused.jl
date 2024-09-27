@@ -229,6 +229,33 @@ function query_interior_original(x1_in::T, x2_in::T, C, A1::IntervalConversion{T
 end
 
 
+# # region extensions.
+
+# assumes a < b
+function transition_weight(x, a, b)
+    return transition_weight((x-a)/(b-a))
+end
+
+function eval_ψ(x::T) where T <: AbstractFloat
+    if x > 0
+        return exp(-one(T)/x)
+    end
+    return zero(T)
+end
+
+function transition_weight(x::T) where T <: AbstractFloat
+
+    if x < 0
+        return zero(T)
+    end
+
+    if x > 1
+        return one(T)
+    end
+
+    ψ_x = eval_ψ(x)
+    return ψ_x/(ψ_x + eval_ψ(one(T)-x))
+end
 
 # no longer used. no mirror image required.
 #### move this idea to another repo.

@@ -39,33 +39,6 @@ function setup_lagrange4(xs::Union{AbstractVector{T}, AbstractRange{T}}) where T
     return w0, w1, w2, w3, w4
 end
 
-# # region extensions.
-
-# assumes a < b
-function transition_weight(x, a, b)
-    return transition_weight((x-a)/(b-a))
-end
-
-function eval_ψ(x::T) where T <: AbstractFloat
-    if x > 0
-        return exp(-one(T)/x)
-    end
-    return zero(T)
-end
-
-function transition_weight(x::T) where T <: AbstractFloat
-
-    if x < 0
-        return zero(T)
-    end
-
-    if x > 1
-        return one(T)
-    end
-
-    ψ_x = eval_ψ(x)
-    return ψ_x/(ψ_x + eval_ψ(one(T)-x))
-end
 
 #### boundary padding options
 
@@ -158,3 +131,10 @@ function _pad_samples!(::LinearPadding, s_ext::Memory, s, Np::Integer, args...)
     end
     return nothing
 end
+
+
+#### extrapolation
+abstract type ExtrapolationOption end
+struct ConstantExtrapolation <: ExtrapolationOption end
+struct ZeroExtrapolation <: ExtrapolationOption end
+

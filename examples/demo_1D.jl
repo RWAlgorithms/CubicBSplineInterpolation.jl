@@ -19,10 +19,11 @@ b = T(3.4)
 t_range = LinRange(a, b, N)
 #f = xx->sinc(sin((xx/5)^3+(xx/20)^2+4.32)) # not bad
 #f = xx->sin(xx) # not bad.
-#f = xx->exp(-(1/17)*(xx-3)^2) # runge effect near right boundary.
+#f = xx->(exp(-(1/17)*(xx-3)^2) +55) # runge effect near right boundary.
+f = xx->exp(-(1/17)*(xx-3)^2) # runge effect near right boundary.
 #f = xx->(exp(-(1/17)*(xx-3)^2) + sin(xx-1.2)) # runge effect near right boundary.
 
-f = xx->exp(-(1/17)*(xx/3)^2) # not bad.
+#f = xx->exp(-(1/17)*(xx/3)^2) # not bad.
 #f = xx->sinc(xx)
 
 A = ITP.IntervalConversion(a, b, N)
@@ -37,19 +38,21 @@ s .= f.(t_range)
 # It is a faster method based on ITP.query, but simplifies the computation for the border 8 samples.
 
 tmp_r = LinRange(a, b, length(s))
+#Np = 5 # 3 + 2 # minimum allowed, but might be quite far from samples.
+#Np = 8
 Np = 10
 buf = ITP.FitBuffer1D(T, length(s); N_padding = Np)
 itp1D = ITP.Interpolator1D(buf, s, a, b; ϵ = ϵ) # allocates itp1D.coeffs.
 
 # timings
 c_backup = copy(itp1D.coeffs)
-@btime ITP.update_itp!($itp1D, $buf, $s; ϵ = $ϵ); # doesn't allocate.
+#@btime ITP.update_itp!($itp1D, $buf, $s; ϵ = $ϵ); # doesn't allocate.
 """
 N = 1000
 5.617 μs (0 allocations: 0 bytes)
 """
 
-@btime ITP.Interpolator1D($buf, $s, $a, $b; ϵ = $ϵ);
+#@btime ITP.Interpolator1D($buf, $s, $a, $b; ϵ = $ϵ);
 """
 6.115 μs (2 allocations: 8.03 KiB)
 """
@@ -167,16 +170,48 @@ PLT.plot(tq_range, log.(abs.(itp_tq - f_tq)), "o", label = "Interpolations.jl: l
 PLT.title("Error plot")
 PLT.legend()
 
-# There can be a bit of error for the region in the border 8 samples.
-coeffs_itp = itp.itp.itp
+# # There can be a bit of error for the region in the border 8 samples.
+# coeffs_itp = itp.itp.itp
+# coeff_diff = abs.(itp1D.coeffs[Np+1:end-Np] - coeffs_itp)
+# PLT.figure(fig_num)
+# fig_num += 1
+# PLT.plot(coeff_diff, "x")
+# PLT.title("Coefficients difference between Interpolations.jl and the one in this package.")
+
+
+# ## Extrapolaion
+
+#extrapolation_len = T(0.2)
+extrapolation_len = T(20.0)
+Nq = 15000
+tq_range = LinRange(query_lb - extrapolation_len, query_ub + extrapolation_len, Nq)
+
+
+itp_tq = itp.(tq_range)
+
+# M0 = Np-1
+# v = view(itp1D.coeffs, 1:M0)
+# #fill!(v, 0)
+# tmp = itp1D.coeffs[M0]
+# fill!(v, tmp)
+
+# v = view(itp1D.coeffs, (length(itp1D.coeffs)-M0+1):length(itp1D.coeffs))
+# #fill!(v, 0)
+# tmp = itp1D.coeffs[(length(itp1D.coeffs)-M0+1)]
+# fill!(v, tmp)
+
+query1D_t = collect( ITP.query1D(u, itp1D) for u in tq_range )
+f_tq = f.(tq_range)
+
 
 PLT.figure(fig_num)
 fig_num += 1
-PLT.plot(abs.(itp1D.coeffs[Np+1:end-Np] - coeffs_itp), "x")
-PLT.title("Coefficients difference between Interpolations.jl and the one in this package.")
-
-
-coeff_diff = abs.(itp1D.coeffs[Np+1:end-Np] - coeffs_itp)
+PLT.plot(t_range, s, label = "data", "o")
+PLT.plot(tq_range, f_tq, label = "oracle")
+PLT.plot(tq_range, query1D_t, label = "query1D")
+PLT.plot(tq_range, itp_tq, "--", label = "Interpolations.jl")
+PLT.title("Extrapolation results")
+PLT.legend()
 
 #@assert 1==32
 
@@ -196,7 +231,7 @@ Sr = [f_real(x1) for x1 in t_range]
 Si = [f_imag(x1) for x1 in t_range]
 
 # create interpolator model.
-cNp = 5
+cNp = 5 # the minimum allowed.
 cbuf = ITP.FitBuffer1D(T, length(Sr); N_padding = cNp)
 citp = ITP.Interpolator1DComplex(cbuf, Sr, Si, first(t_range), last(t_range); ϵ = ϵ)
 
@@ -223,7 +258,7 @@ println("Interpolation fit residual:")
 println()
 
 
-# cetermine query intervals.
+# determine query intervals.
 query_lb, query_ub = ITP.get_itp_interval(citp)
 tq_range = LinRange(query_lb, query_ub, 10000)
 

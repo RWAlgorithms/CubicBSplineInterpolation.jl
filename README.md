@@ -16,19 +16,31 @@ To reduce implementation complexity arising from border coefficients, the query 
 
 Both the oscillatory and border issue are alleviated by having the algorithm automatically pad the user-provided interpolation samples at the boundaries. See [Interpolations.jl](https://github.com/JuliaMath/Interpolations.jl) for an interpolation package that is based on a more conventional spline nomenclature and more boundary conditions.
 
-# Usage
+# Usage notes
 - First, allocate a buffer of type `FitBuffer1D` or `FitBuffer2D`, then use it to create the interpolation coefficients, which is of type `Interpolator1D`, `Interpolator1DComplex`, `Interpolator2D`, or `Interpolator2DComplex`.
 
 - Query the interpolation via `query1D` or `query2D`, which requires the interpolation coefficients.
 
 - Update the coefficients via `update_itp!`.
 
-## Notes
-- The larger `N_padding` is, the less oscillatory behavior the interpolation result should be at the boundary.
+## Sample padding length
+When one creates a `FitBuffer1D` or `FitBuffer2D` variable, one can pass to their constructors the optional keyword `N_padding` to specify the padding length.
 
-- Extrapolation is clamped to to the closest interpolation sample for each coordinate (Taxicab distance) if `N_padding >= 2`.
+The larger `N_padding` is, the less oscillatory behavior the interpolation result should be at the boundary. It needs to be larger than or equal to `5`, because this library's query code needs two padded samples to avoid out-of-bounds access, and another three samples to transition to a extrapolation constant.
 
-- `LinearPadding()`, `ConstantPadding`, `Lagrange4Padding` are to use linear, constant, and 4-th order Lagrange extrapolation on the boundary samples to pad the user-provided samples. In order of fast to slow computational time: `ConstantPadding()`, `LinearPadding()`, `Lagrange4Padding`. The default is `LinearPadding()`.
+The default is `N_padding = 10` for these constructors.
+
+## Sample padding options
+`LinearPadding()`, `ConstantPadding`, `Lagrange4Padding` specifies the linear, constant, and 4-th order Lagrange extrapolation on the boundary samples to pad the user-provided samples. In order of fast to slow computational time: `ConstantPadding()`, `LinearPadding()`, `Lagrange4Padding`.
+
+The default is `LinearPadding()`.
+
+## Extrapolation options
+`ZeroExtrapolation()` and `ConstantExtrapolation()` transitions the query function from the last fit sample to either the zero function or a constant function, respectively. The transition is part of the spline surrogate, so it is differentiable. The constant for the `ConstantExtrapolation()` option depends on the value of `N_padding` and the padding option used. 
+
+The default is `ConstantExtrapolation()`
+
+# Examples
 
 ## Example: 1D, Real-valued
 ```julia
@@ -49,7 +61,7 @@ t_range = LinRange(a, b, N)
 f = xx->exp(-(1/17)*(xx/3)^2)
 s = f.(t_range) # generate interpolation samples.
 
-N_padding = 2 # This needs to be >= 2 for the interpolation result to fully match up at all sampling locations.
+N_padding = 5 # This should be equal and larger than 5.
 buf = ITP.FitBuffer1D(T, length(s); N_padding = N_padding)
 itp1D = ITP.Interpolator1D(buf, s, a, b; ϵ = ϵ) # allocates itp1D.coeffs.
 
@@ -196,7 +208,7 @@ Si = [f_imag(x1,x2) for x1 in t_range1, x2 in t_range2]
 
 # fit coefficients.
 cbuf = ITP.FitBuffer2D(T, size(Sr); N_padding = (8,7))
-citp = ITP.Interpolator2DComplex(ITP.LinearPadding(), cbuf, Sr, Si, first(t_range1), last(t_range1), first(t_range2), last(t_range2))
+citp = ITP.Interpolator2DComplex(ITP.LinearPadding(), ITP.ConstantExtrapolation(), cbuf, Sr, Si, first(t_range1), last(t_range1), first(t_range2), last(t_range2))
 
 # This also works: ITP.Interpolator2DComplex(cbuf, Sr, Si, first(t_range1), last(t_range1), first(t_range2), last(t_range2))
 # Without specifying the type of padding strategy, it defaults to LinearPadding.

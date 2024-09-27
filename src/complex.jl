@@ -32,7 +32,17 @@ struct Interpolator1DComplex{T <: AbstractFloat} <: AbstractInterpolator1D
     # end
 
     # Mutates buf, option is for dispatch.
-    function Interpolator1DComplex(option::PaddingOption, buf::FitBuffer1D, s_real::Union{Memory{T},Vector{T}}, s_imag::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
+    function Interpolator1DComplex(
+        padding_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        buf::FitBuffer1D,
+        s_real::Union{Memory{T},Vector{T}},
+        s_imag::Union{Memory{T},Vector{T}},
+        x_start::T,
+        x_fin::T;
+        ϵ::T = eps(T)*2,
+        ) where T <: AbstractFloat
+
         size(s_real) == size(s_imag) || error("Size mismatch between the real and imaginary sample matrices.")
 
         x_start < x_fin || error("x_start must be strictly smaller than x_fin.")
@@ -42,10 +52,10 @@ struct Interpolator1DComplex{T <: AbstractFloat} <: AbstractInterpolator1D
         A, tmp_r = create_query_cache(x_start, x_fin, length(s_real), Np)
         
         c_real = Memory{T}(undef, get_coeffs_length(buf))
-        get_coeffs!(option, c_real, buf, s_real, tmp_r, ϵ)
+        get_coeffs!(padding_option, extrapolation_option, c_real, buf, s_real, tmp_r, ϵ)
 
         c_imag = Memory{T}(undef, get_coeffs_length(buf))
-        get_coeffs!(option, c_imag, buf, s_imag, tmp_r, ϵ)
+        get_coeffs!(padding_option, extrapolation_option, c_imag, buf, s_imag, tmp_r, ϵ)
 
         size(c_real) == size(c_imag) || error("Size mismatch for coefficients. Please file bug report.")
         return new{T}(c_real, c_imag, A, x_start, x_fin)
@@ -53,13 +63,14 @@ struct Interpolator1DComplex{T <: AbstractFloat} <: AbstractInterpolator1D
 
     # convinence constructor. Mutates buf
     function Interpolator1DComplex(buf::FitBuffer1D, s_real::Union{Memory{T},Vector{T}}, s_imag::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
-        return Interpolator1DComplex(LinearPadding(), buf, s_real, s_imag, x_start, x_fin; ϵ = ϵ)
+        return Interpolator1DComplex(LinearPadding(), ConstantExtrapolation(), buf, s_real, s_imag, x_start, x_fin; ϵ = ϵ)
     end    
 end
 
 # Mutates buf, option is for dispatch. itp mutates, is output.
 function update_itp!(
-    option::PaddingOption,
+    padding_option::PaddingOption,
+    extrapolation_option::ExtrapolationOption,
     itp::Interpolator1DComplex,
     buf::FitBuffer1D,
     s_real::Union{Memory{T},Vector{T}},
@@ -70,14 +81,14 @@ function update_itp!(
     length(s_real) == length(s_imag) == get_data_length(buf) || error("Length mismatch.")
 
     x_start, x_fin = get_itp_interval(itp)
-    get_coeffs!(option, itp.real_coeffs, buf, s_real, LinRange(x_start, x_fin, length(s_real)), ϵ)
-    get_coeffs!(option, itp.imag_coeffs, buf, s_imag, LinRange(x_start, x_fin, length(s_imag)), ϵ)
+    get_coeffs!(padding_option, extrapolation_option, itp.real_coeffs, buf, s_real, LinRange(x_start, x_fin, length(s_real)), ϵ)
+    get_coeffs!(padding_option, extrapolation_option, itp.imag_coeffs, buf, s_imag, LinRange(x_start, x_fin, length(s_imag)), ϵ)
     return nothing
 end
 
 # convenince
 function update_itp!(itp::Interpolator1DComplex, buf::FitBuffer1D, s_real::Union{Memory{T},Vector{T}}, s_imag::Union{Memory{T},Vector{T}}; ϵ::T = eps(T)*2) where T <: AbstractFloat
-    return update_itp!(LinearPadding(), itp, buf, s_real, s_imag; ϵ = ϵ)
+    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, s_real, s_imag; ϵ = ϵ)
 end
 
 
@@ -171,30 +182,43 @@ struct Interpolator2DComplex{T <: AbstractFloat} <: AbstractInterpolator2D
 
     # has padding.
     # mutates buf.
-    function Interpolator2DComplex(option::PaddingOption, buf::FitBuffer2D, S_real::Matrix{T}, S_imag::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
+    function Interpolator2DComplex(
+        padding_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        buf::FitBuffer2D,
+        S_real::Matrix{T},
+        S_imag::Matrix{T},
+        x1_start::T,
+        x1_fin::T,
+        x2_start::T,
+        x2_fin::T;
+        ϵ::T = eps(T)*2,
+        ) where T <: AbstractFloat
+
         size(S_real) == size(S_imag) || error("Size mismatch between the real and imaginary sample matrices.")
 
         A1, xs1 = create_query_cache(x1_start, x1_fin, size(S_real,1), buf.buf_x1.N_padding)
         A2, xs2 = create_query_cache(x2_start, x2_fin, size(S_real,2), buf.buf_x2.N_padding)
 
         c_real = zeros(T, get_coeffs_size(buf)) # allocates.
-        get_coeffs!(option, c_real, buf, S_real, xs1, xs2, ϵ)
+        get_coeffs!(padding_option, extrapolation_option, c_real, buf, S_real, xs1, xs2, ϵ)
 
         c_imag = zeros(T, get_coeffs_size(buf)) # allocates.
-        get_coeffs!(option, c_imag, buf, S_imag, xs1, xs2, ϵ)
+        get_coeffs!(padding_option, extrapolation_option, c_imag, buf, S_imag, xs1, xs2, ϵ)
     
         return new{T}(c_real, c_imag, A1, A2, x1_start, x1_fin, x2_start, x2_fin)
     end
 
     # has padding. Default to LinearPadding()
     function Interpolator2DComplex(buf::FitBuffer2D, S_real::Matrix{T}, S_imag::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
-        return Interpolator2DComplex(LinearPadding(), buf,  S_real, S_imag, x1_start, x1_fin, x2_start, x2_fin; ϵ = ϵ)
+        return Interpolator2DComplex(LinearPadding(), ConstantExtrapolation(), buf,  S_real, S_imag, x1_start, x1_fin, x2_start, x2_fin; ϵ = ϵ)
     end
 end
 
 # Mutates buf, option is for dispatch. itp mutates, is output.
 function update_itp!(
-    option::PaddingOption,
+    padding_option::PaddingOption,
+    extrapolation_option::ExtrapolationOption,
     itp::Interpolator2DComplex,
     buf::FitBuffer2D,
     S_real::Matrix{T},
@@ -209,14 +233,15 @@ function update_itp!(
     x1_start, x1_fin, x2_start, x2_fin = get_itp_interval(itp)
     xs1 = LinRange(x1_start, x1_fin, length(S_real))
     xs2 = LinRange(x2_start, x2_fin, length(S_real))
-    get_coeffs!(option, itp.real_coeffs, buf, S_real, xs1, xs2, ϵ)
-    get_coeffs!(option, itp.imag_coeffs, buf, S_imag, xs1, xs2, ϵ)
+
+    get_coeffs!(padding_option, extrapolation_option, itp.real_coeffs, buf, S_real, xs1, xs2, ϵ)
+    get_coeffs!(padding_option, extrapolation_option, itp.imag_coeffs, buf, S_imag, xs1, xs2, ϵ)
     return nothing
 end
 
 # convenince
 function update_itp!(itp::Interpolator2DComplex, buf::FitBuffer2D, S_real::Matrix{T}, S_imag::Matrix{T}; ϵ::T = eps(T)*2) where T <: AbstractFloat
-    return update_itp!(LinearPadding(), itp, buf, S_real, S_imag; ϵ = ϵ)
+    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, S_real, S_imag; ϵ = ϵ)
 end
 
 function query2D(x1_in::T, x2_in::T, itp::Interpolator2DComplex{T}) where T <: AbstractFloat

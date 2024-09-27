@@ -16,12 +16,12 @@ struct FitBuffer2D{T <: AbstractFloat}
     function FitBuffer2D(::Type{T}, sz::Tuple{Int,Int}; N_padding::Tuple{Int,Int} = (10,10)) where T <: AbstractFloat
 
         Np1, Np2 = N_padding
-        Np1 >= 0 || error("All entries of N_padding must be non-negative.")
-        Np2 >= 0 || error("All entries of N_padding must be non-negative.")
+        Np1 >= 5 || error("All entries of N_padding must be larger or equal to 5. Two for the query system used in this library, three for transition to constant extrapolation.")
+        Np2 >= 5 || error("All entries of N_padding must be larger or equal to 5. Two for the query system used in this library, three for transition to constant extrapolation.")
         
         N1, N2 = sz
-        N1 > 0 || error("All entries of sz must be positive.")
-        N2 > 0 || error("All entries of sz must be positive.")
+        N1 > 2 || error("All entries of sz must be larger than 2.")
+        N2 > 2 || error("All entries of sz must be larger than 2.")
 
         S1 = zeros(T, N1+2*Np1, N2)
         return new{T}(
@@ -65,25 +65,42 @@ struct Interpolator2D{T <: AbstractFloat} <: AbstractInterpolator2D
 
     # has padding.
     # mutates buf.
-    function Interpolator2D(option::PaddingOption, buf::FitBuffer2D, S::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
+    function Interpolator2D(
+        padding_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        buf::FitBuffer2D,
+        S::Matrix{T},
+        x1_start::T,
+        x1_fin::T,
+        x2_start::T,
+        x2_fin::T;
+        ϵ::T = eps(T)*2,
+        ) where T <: AbstractFloat
     
         A1, xs1 = create_query_cache(x1_start, x1_fin, size(S,1), buf.buf_x1.N_padding)
         A2, xs2 = create_query_cache(x2_start, x2_fin, size(S,2), buf.buf_x2.N_padding)
 
         c = zeros(T, get_coeffs_size(buf)) # allocates.
-        get_coeffs!(option, c, buf, S, xs1, xs2, ϵ)
+        get_coeffs!(padding_option, extrapolation_option, c, buf, S, xs1, xs2, ϵ)
     
         return new{T}(c, A1, A2, x1_start, x1_fin, x2_start, x2_fin)
     end
 
     # has padding. Default to LinearPadding()
     function Interpolator2D(buf::FitBuffer2D, S::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
-        return Interpolator2D(LinearPadding(), buf, S, x1_start, x1_fin, x2_start, x2_fin; ϵ = ϵ)
+        return Interpolator2D(LinearPadding(), ConstantExtrapolation(), buf, S, x1_start, x1_fin, x2_start, x2_fin; ϵ = ϵ)
     end
 end
 
 # option is for dispatch. itp mutates, is output. Mutates buf, 
-function update_itp!(option::PaddingOption, itp::Interpolator2D, buf::FitBuffer2D, S::Matrix{T}; ϵ::T = eps(T)*2) where T <: AbstractFloat
+function update_itp!(
+    padding_option::PaddingOption,
+    extrapolation_option::ExtrapolationOption,
+    itp::Interpolator2D,
+    buf::FitBuffer2D,
+    S::Matrix{T};
+    ϵ::T = eps(T)*2,
+    ) where T <: AbstractFloat
     
     size(itp.coeffs) == get_coeffs_size(buf) || error("Size mismatch.")
     size(S,2) == size(buf.S1, 2) || error("Size mismatch.")
@@ -91,21 +108,22 @@ function update_itp!(option::PaddingOption, itp::Interpolator2D, buf::FitBuffer2
     x1_start, x1_fin, x2_start, x2_fin = get_itp_interval(itp)
     xs1 = LinRange(x1_start, x1_fin, size(S,1))
     xs2 = LinRange(x2_start, x2_fin, size(S,2))
-    get_coeffs!(option, itp.coeffs, buf, S, xs1, xs2, ϵ)
+    get_coeffs!(padding_option, extrapolation_option, itp.coeffs, buf, S, xs1, xs2, ϵ)
 
     return nothing
 end
 
 # convenince
 function update_itp!(itp::Interpolator2D, buf::FitBuffer2D, S::Matrix{T}; ϵ::T = eps(T)*2) where T <: AbstractFloat
-    return update_itp!(LinearPadding(), itp, buf, S; ϵ = ϵ)
+    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, S; ϵ = ϵ)
 end
 
 
 # X, buf1, buf2 mutates, are buffers.
 # Y mutates, is output.
 function get_coeffs!(
-    option::PaddingOption,
+    pading_option::PaddingOption,
+    extrapolation_option::ExtrapolationOption,
     Y::Matrix,
     buf::FitBuffer2D,
     S::Matrix{T},
@@ -119,13 +137,13 @@ function get_coeffs!(
 
     X = buf.S1
     for (xc,sc) in Iterators.zip(eachcol(X),eachcol(S))
-        get_coeffs!(option, xc, buf.buf_x1, sc, xs1, ϵ)
+        get_coeffs!(pading_option, extrapolation_option, xc, buf.buf_x1, sc, xs1, ϵ)
     end
 
     #Y = zeros(T, size(X))
     for (yr,xr) in Iterators.zip(eachrow(Y),eachrow(X))
         
-        get_coeffs!(option, yr, buf.buf_x2, xr, xs2, ϵ)
+        get_coeffs!(pading_option, extrapolation_option, yr, buf.buf_x2, xr, xs2, ϵ)
     end
 
     return nothing

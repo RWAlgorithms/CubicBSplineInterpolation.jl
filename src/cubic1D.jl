@@ -34,8 +34,8 @@ struct FitBuffer1D{T <: AbstractFloat}
 
     function FitBuffer1D(::Type{T}, N::Integer; N_padding::Integer = 10) where T <: AbstractFloat
 
-        N_padding >= 0 || error("N_padding must be non-negative.")
-        N > 0 || error("N must be positive.")
+        N_padding >= 5 || error("N_padding must be larger or equal than 5. Two for the query system used in this library, three for transition to constant extrapolation.")
+        N > 2 || error("N is the number of samples, and it must be larger than 2.")
 
         M = N + 2*N_padding # 2 extra samples at the each boundary.
         return new{T}(Memory{T}(undef, M), Memory{T}(undef, M), Int(N_padding))
@@ -52,7 +52,8 @@ end
 
 # Box 2, Unser 1999.
 function get_coeffs!(
-    option::PaddingOption,
+    pad_option::PaddingOption,
+    ex_option::ExtrapolationOption,
     c_minus::AbstractVector{T},
     buf::FitBuffer1D{T},
     s::AbstractVector{T},
@@ -62,7 +63,7 @@ function get_coeffs!(
     
     # @show get_data_length(buf), length(s)
     get_data_length(buf) == length(s) || error("Length mismatch.")
-    length(s) > 4 || error("Must provide at least 4 input samples.")
+    length(s) > 2 || error("Must provide at least 2 input samples.")
 
     s_ext, c_plus = buf.s_extension, buf.c_plus
 
@@ -76,11 +77,43 @@ function get_coeffs!(
     v = view(s_ext, st_ind:fin_ind)
     copy!(v, s)
 
-    _pad_samples!(option, s_ext, s, Np, xs)
+    _pad_samples!(pad_option, s_ext, s, Np, xs)
 
     # get coefficient on the extended sample set.
     #_get_coeffs!(c_minus, buf.c_plus, s_ext, ϵ)
     _get_coeffs!(c_minus, c_plus, s_ext, ϵ)
+
+    _post_process_coeffs!(ex_option, c_minus, Np)
+    return nothing
+end
+
+# c must be 1-indexing, stride 1
+function _post_process_coeffs!(::ConstantExtrapolation, c::AbstractVector, Np::Integer)
+
+    M0 = Np-1 # ensure the query matches the samples.
+    v = view(c, 1:M0)
+    tmp = c[M0]
+    #tmp = sum(v)/length(v)
+    fill!(v, tmp)
+    
+    v = view(c, (length(c)-M0+1):length(c))
+    tmp = c[(length(c)-M0+1)]
+    #tmp = sum(v)/length(v)
+    fill!(v, tmp)
+
+    return nothing
+end
+
+# c must be 1-indexing, stride 1
+function _post_process_coeffs!(::ZeroExtrapolation, c::AbstractVector, Np::Integer)
+
+    M0 = Np-1
+    v = view(c, 1:M0)
+    fill!(v, 0)
+    
+    v = view(c, (length(c)-M0+1):length(c))
+    fill!(v, 0)
+
     return nothing
 end
 
@@ -207,19 +240,25 @@ struct Interpolator1D{T <: AbstractFloat} <: AbstractInterpolator1D
     x_start::T
     x_fin::T
 
-    # The boundary 2 samples (e.g. in the Δx*2 region).won't match the corresponding boundary 2 samples in s.
-    function Interpolator1D(s::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
-        A = IntervalConversion(x_start, x_fin, length(s))
-        c = Memory{T}(undef, length(s))
-        get_coeffs!(c, s, ϵ)
-        return new{T}(c, A, x_start, x_fin)
-    end
+    # # The boundary 2 samples (e.g. in the Δx*2 region).won't match the corresponding boundary 2 samples in s.
+    # function Interpolator1D(s::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
+    #     A = IntervalConversion(x_start, x_fin, length(s))
+    #     c = Memory{T}(undef, length(s))
+    #     get_coeffs!(c, s, ϵ)
+    #     return new{T}(c, A, x_start, x_fin)
+    # end
 
     # Mutates buf, option is for dispatch.
-    function Interpolator1D(option::PaddingOption, buf::FitBuffer1D, s::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
+    function Interpolator1D(
+        pading_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        buf::FitBuffer1D, s::Union{Memory{T},Vector{T}},
+        x_start::T,
+        x_fin::T;
+        ϵ::T = eps(T)*2,
+        ) where T <: AbstractFloat
 
         x_start < x_fin || error("x_start must be strictly smaller than x_fin.")
-
         
         Np = buf.N_padding
 
@@ -232,29 +271,29 @@ struct Interpolator1D{T <: AbstractFloat} <: AbstractInterpolator1D
         A, tmp_r = create_query_cache(x_start, x_fin, length(s), Np)
         
         c = Memory{T}(undef, get_coeffs_length(buf))
-        get_coeffs!(option, c, buf, s, tmp_r, ϵ)
+        get_coeffs!(pading_option, extrapolation_option, c, buf, s, tmp_r, ϵ)
 
         return new{T}(c, A, x_start, x_fin)
     end
 
     # convinence constructor. Mutates buf
     function Interpolator1D(buf::FitBuffer1D, s::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
-        return Interpolator1D(LinearPadding(), buf, s, x_start, x_fin; ϵ = ϵ)
+        return Interpolator1D(LinearPadding(), ConstantExtrapolation(), buf, s, x_start, x_fin; ϵ = ϵ)
     end    
 end
 
 # option is for dispatch. itp mutates, is output. Mutates buf, 
-function update_itp!(option::PaddingOption, itp::Interpolator1D, buf::FitBuffer1D, s::Union{Memory{T},Vector{T}}; ϵ::T = eps(T)*2) where T <: AbstractFloat
+function update_itp!(padding_option::PaddingOption, extrapolation_option::ExtrapolationOption, itp::Interpolator1D, buf::FitBuffer1D, s::Union{Memory{T},Vector{T}}; ϵ::T = eps(T)*2) where T <: AbstractFloat
     length(s) == get_data_length(buf) || error("Length mismatch.")
 
     x_start, x_fin = get_itp_interval(itp)
-    get_coeffs!(option, itp.coeffs, buf, s, LinRange(x_start, x_fin, length(s)), ϵ)
+    get_coeffs!(padding_option, extrapolation_option, itp.coeffs, buf, s, LinRange(x_start, x_fin, length(s)), ϵ)
     return nothing
 end
 
 # convenince
 function update_itp!(itp::Interpolator1D, buf::FitBuffer1D, s::Union{Memory{T},Vector{T}}; ϵ::T = eps(T)*2) where T <: AbstractFloat
-    return update_itp!(LinearPadding(), itp, buf, s; ϵ = ϵ)
+    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, s; ϵ = ϵ)
 end
 
 

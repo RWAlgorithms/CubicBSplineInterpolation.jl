@@ -28,6 +28,12 @@ export IntervalConversion,
 get_coeffs, query1D, query2D,
 FitBuffer1D, SetupBuffer2D,
 Interpolator1D, Interpolator2D,
-Interpolator1DComplex, Interpolator2DComplex
+Interpolator1DComplex, Interpolator2DComplex,
+
+# padding options
+LinearPadding, ConstantPadding, Lagrange4Padding,
+
+# extrapolation options
+ZeroExtrapolation, ConstantExtrapolation
 
 end # module CubicBSplineInterpolation

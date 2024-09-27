@@ -20,21 +20,33 @@ b2 = T(1.23)
 N2 = 113
 t_range1 = LinRange(a1, b1, N1)
 t_range2 = LinRange(a2, b2, N2)
-f = (xx,yy)->sinc((xx)^2+(yy)^2)
+f = (xx,yy)->sinc((xx)^2+(yy)^2+20)
 S = [f(x1,x2) for x1 in t_range1, x2 in t_range2]
 
 
 # fit.
 buf = ITP.FitBuffer2D(T, size(S); N_padding = (10,10))
-itp2D = ITP.Interpolator2D(buf, S, a1, b1, a2, b2; ϵ = ϵ)
+#itp2D = ITP.Interpolator2D(buf, S, a1, b1, a2, b2; ϵ = ϵ)
+
+padding_option = ITP.LinearPadding()
+extrapolation_option = ITP.ZeroExtrapolation()
+
+# padding_option = ITP.LinearPadding()
+# extrapolation_option = ITP.ConstantExtrapolation()
+
+itp2D = ITP.Interpolator2D(
+    padding_option,
+    extrapolation_option,
+    buf, S, a1, b1, a2, b2; ϵ = ϵ,
+)
 
 # test update_itp!
 c_back = copy(itp2D.coeffs)
 S_random = randn(Random.Xoshiro(0), T, size(S))
-ITP.update_itp!(itp2D, buf, S_random; ϵ = ϵ)
+ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S_random; ϵ = ϵ)
 @assert norm(c_back - itp2D.coeffs) > eps(T)*10
 
-ITP.update_itp!(itp2D, buf, S; ϵ = ϵ)
+ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S; ϵ = ϵ)
 @assert norm(c_back - itp2D.coeffs) < eps(T)
 
 # timing
@@ -92,6 +104,18 @@ PLT.figure(fig_num)
 fig_num += 1
 PLT.imshow(Sq)
 PLT.title("Oracle")
+
+# extrapolation
+extrapolation_len = T(0.3)
+tq_range1 = LinRange(aq1 - extrapolation_len, bq1 + extrapolation_len, Nq1)
+tq_range2 = LinRange(aq2 - extrapolation_len, bq2 + extrapolation_len, Nq2)
+
+Yq = [ITP.query2D(x1, x2, itp2D) for x1 in tq_range1, x2 in tq_range2]
+
+PLT.figure(fig_num)
+fig_num += 1
+PLT.imshow(Yq)
+PLT.title("extrapolation length: $(extrapolation_len), Yq")
 
 # @assert 3==4
 
@@ -238,31 +262,31 @@ julia> include("demo_2D.jl")
 Real-valued case.
 Relative error in the interior query regions:
 norm(Sq - Yq) / norm(Sq) = 0.000675699783428046
-  35.413 ns (0 allocations: 0 bytes)
+35.413 ns (0 allocations: 0 bytes)
 abs(out_query2D - out_oracle) = 4.213215210605026e-5
 abs(out_itp - out_oracle) = 4.213215210610577e-5
-  14.526 ns (0 allocations: 0 bytes)
-  31.205 ns (0 allocations: 0 bytes)
-  35.413 ns (0 allocations: 0 bytes)
+14.526 ns (0 allocations: 0 bytes)
+31.205 ns (0 allocations: 0 bytes)
+35.413 ns (0 allocations: 0 bytes)
 
 Complex-valued case.
 norm(Sq - Yq) / norm(Sq) = 2.0110752556948815e-6
 abs(out_query2D - out_oracle) = 1.1237840788581748e-9
 abs(out_itp - out_oracle) = 1.1237841355405732e-9
-  35.716 ns (0 allocations: 0 bytes)
-  104.817 ns (3 allocations: 64 bytes)
-  63.967 ns (0 allocations: 0 bytes)
-  55.764 ns (0 allocations: 0 bytes)
+35.716 ns (0 allocations: 0 bytes)
+104.817 ns (3 allocations: 64 bytes)
+63.967 ns (0 allocations: 0 bytes)
+55.764 ns (0 allocations: 0 bytes)
 
 Julia Version 1.11.0-rc1
 Commit 3a35aec36d1 (2024-06-25 10:23 UTC)
 Build Info:
-  Official https://julialang.org/ release
+Official https://julialang.org/ release
 Platform Info:
-  OS: Linux (x86_64-linux-gnu)
-  CPU: 16 × AMD Ryzen 7 1700 Eight-Core Processor
-  WORD_SIZE: 64
-  LLVM: libLLVM-16.0.6 (ORCJIT, znver1)
+OS: Linux (x86_64-linux-gnu)
+CPU: 16 × AMD Ryzen 7 1700 Eight-Core Processor
+WORD_SIZE: 64
+LLVM: libLLVM-16.0.6 (ORCJIT, znver1)
 Threads: 1 default, 0 interactive, 1 GC (on 16 virtual cores)
 """
 
