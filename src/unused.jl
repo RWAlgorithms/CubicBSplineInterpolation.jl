@@ -404,3 +404,50 @@ function query(x_in::T, c::Memory{T}, A::IntervalConversion{T}) where T <: Abstr
     end
     return out
 end
+
+
+#### derivatives
+# These are incorrect.
+
+# specialized for 1 < abs(x) < 2 # incorrect result. possibly due to our choice of query bounds.
+function eval_d2B3_in12(x::T) where T <: AbstractFloat
+    if x > 0
+        return -(2-x)
+        #return 2 + x
+    end
+
+    return 2 + x
+    #return -(2-x)
+end
+
+# specialized for 1 < abs(x) < 2 # incorrect result. possibly due to our choice of query bounds.
+# specialized for 0 <= abs(x) < 1
+function eval_d2B3_in01(x::T) where T <: AbstractFloat
+    if x > 0
+        return -2 + 3*x
+        #return -2 - 3*x
+    end
+
+    return -2 - 3*x
+    #return -2 + 3*x
+end
+
+# suspected incorrect
+# specialized for 1 < abs(x) < 2
+function eval_dB3_in12(x::T) where T <: AbstractFloat
+    if x > 0
+        return -half(T)*(2-x)^2
+    end
+
+    return half(T)*(2+x)^2
+end
+
+# suspected incorrect
+# specialized for 0 <= abs(x) < 1
+function eval_dB3_in01(x::T) where T <: AbstractFloat
+    if x > 0
+        return -2*x + T(3)/T(2) * x^2
+    end
+
+    return -2*x -T(3)/T(2) *x^2
+end

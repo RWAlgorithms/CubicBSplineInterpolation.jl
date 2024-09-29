@@ -4,16 +4,21 @@
 module CubicBSplineInterpolation
 
 function twothirds(::Type{T}) where T <: AbstractFloat
-    return 0.6666666666666666
+    return T(2)/T(3)
 end
 
-function twothirds(::Type{Float64})
-    return 0.6666666666666666
+# function twothirds(::Type{Float64})
+#     return 0.6666666666666666
+# end
+
+# function twothirds(::Type{Float32})
+#     return 0.6666667f0
+# end
+
+function half(::Type{T}) where T <: AbstractFloat
+    return one(T)/T(2)
 end
 
-function twothirds(::Type{Float32})
-    return 0.6666667f0
-end
 
 include("padding.jl")
 
@@ -23,6 +28,8 @@ include("cubic1D.jl")
 include("cubic2D.jl")
 include("complex.jl") # complex-valued version.
 
+include("derivatives1D.jl")
+include("derivatives2D.jl")
 
 export IntervalConversion, 
 get_coeffs, query1D, query2D,

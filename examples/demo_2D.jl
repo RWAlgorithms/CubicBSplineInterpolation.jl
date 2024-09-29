@@ -2,9 +2,6 @@ if !isdefined(Main, :CubicBSplineInterpolation)
     include("a.jl")
 end
 
-# # 2D
-
-
 PLT.close("all")
 fig_num = 1
 
@@ -28,11 +25,11 @@ S = [f(x1,x2) for x1 in t_range1, x2 in t_range2]
 buf = ITP.FitBuffer2D(T, size(S); N_padding = (10,10))
 #itp2D = ITP.Interpolator2D(buf, S, a1, b1, a2, b2; ϵ = ϵ)
 
-padding_option = ITP.LinearPadding()
-extrapolation_option = ITP.ZeroExtrapolation()
-
 # padding_option = ITP.LinearPadding()
-# extrapolation_option = ITP.ConstantExtrapolation()
+# extrapolation_option = ITP.ZeroExtrapolation()
+
+padding_option = ITP.LinearPadding()
+extrapolation_option = ITP.ConstantExtrapolation()
 
 itp2D = ITP.Interpolator2D(
     padding_option,
@@ -163,7 +160,6 @@ out_oracle = f(x1,x2)
 31.971 ns (0 allocations: 0 bytes)
 """
 
-#@assert 1==23
 
 # # Complex values, 2D
 
@@ -202,7 +198,6 @@ ITP.update_itp!(citp, cbuf, Sr, Si; ϵ = ϵ)
 query_lb1, query_ub1, query_lb2, query_ub2 = ITP.get_itp_interval(citp)
 tq_range1 = LinRange(query_lb1, query_ub1, 10000)
 tq_range2 = LinRange(query_lb2, query_ub2, 1473)
-
 
 Yq = [ ITP.query2D(x1, x2, citp) for x1 in tq_range1, x2 in tq_range2 ]
 Sq = [ f(x1, x2) for x1 in tq_range1, x2 in tq_range2 ]

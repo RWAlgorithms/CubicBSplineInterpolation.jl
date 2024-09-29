@@ -238,5 +238,61 @@ a1, a2, b1, b2 = first(t_range1), last(t_range1), first(t_range2), last(t_range2
 @btime ITP.update_itp!($citp, $cbuf, $Sr, $Si; ϵ = $ϵ) # Does not allocate.
 ```
 
+# Derivatives
+The cubic B-spline has continuous first and second derivatives, but discontinuous third derivatives.
+
+# ## First derivatives
+If `itp` is a variable of type or `Interpolator1D`, then use the following to get the derivative, `g`:
+```julia
+g = query1D_derivative1(x, itp)
+```
+
+If `itp` is a variable of type or `Interpolator1DComplex`, then use the following to get the real part's derivative `gr` and the imaginary part's derivaitve `gi`:
+```julia
+gr, gi = query1D_derivative1(x, itp)
+```
+
+If `itp` is a variable of type or `Interpolator2D`, then use the following to get the derivative in the first and second coordinate axis directions, stored in `g1`, `g2`, respectively:
+```julia
+g1, g2 = query2D_derivative1(x1, x2, itp)
+```
+
+If `itp` is a variable of type or `Interpolator2DComplex`, then use the following to get the real part's derivative `gr` and the imaginary part's derivaitve `gi`:
+```julia
+g1r, g2r, g1i, g2i = query2D_derivative1(x1, x2, itp)
+```
+The last letter for the left-hand side variables indicate whether the variable is for the real (`r`) or imaginary (`i`) part.
+
+# ## Second derivatives
+If `itp` is a variable of type or `Interpolator1D`, then use the following to get the second derivative, `g2`:
+```julia
+g2 = query1D_derivative2(x, itp)
+```
+
+If `itp` is a variable of type or `Interpolator1DComplex`, then use the following to get the real part's second derivative `gr` and the imaginary part's second derivaitve `gi2`:
+```julia
+gr2, gi2 = query1D_derivative2(x, itp)
+```
+
+If `itp` is a variable of type or `Interpolator2D`, then use the following to get the entries of the Hessian matrix:
+```julia
+g11, g12, g21 = query2D_derivative2(x1, x2, itp)
+```
+where the Hessian matrix is:
+```
+H = [
+    g11 g12;
+    g21 g22;
+]
+```
+Schwarz's (or Clairaut's) theorem on equality of mixed partials mean `g12 = g21`.
+
+If `itp` is a variable of type or `Interpolator2DComplex`, then use the following to get the real part's derivative `gr` and the imaginary part's derivaitve `gi`:
+```julia
+g11r, g12r, g22r, g11i, g12i, g22i = query2D_derivative2(x1, x2, itp)
+```
+The last letter for the left-hand side variables indicate whether the variable is for the real (`r`) or imaginary (`i`) part.
+
+
 # Reference
 1. Michael Unser, Splines: a perfect fit for signal and image processing, 1999, DOI: 10.1109/79.799930.

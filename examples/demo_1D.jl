@@ -42,7 +42,16 @@ tmp_r = LinRange(a, b, length(s))
 #Np = 8
 Np = 10
 buf = ITP.FitBuffer1D(T, length(s); N_padding = Np)
-itp1D = ITP.Interpolator1D(buf, s, a, b; ϵ = ϵ) # allocates itp1D.coeffs.
+#padding_option = ITP.Lagrange4Padding()
+#padding_option = ITP.ConstantPadding()
+padding_option = ITP.LinearPadding()
+#extrapolation_option = ITP.ZeroExtrapolation()
+extrapolation_option = ITP.ConstantExtrapolation()
+itp1D = ITP.Interpolator1D(
+    padding_option,
+    extrapolation_option,
+    buf, s, a, b; ϵ = ϵ,
+) # allocates itp1D.coeffs.
 
 # timings
 c_backup = copy(itp1D.coeffs)
@@ -60,10 +69,10 @@ N = 1000
 # test update_itp!
 c_back = copy(itp1D.coeffs)
 s_random = randn(Random.Xoshiro(0), T, size(s))
-ITP.update_itp!(itp1D, buf, s_random; ϵ = ϵ)
+ITP.update_itp!(padding_option, extrapolation_option, itp1D, buf, s_random; ϵ = ϵ)
 @assert norm(c_back - itp1D.coeffs) > eps(T)*10
 
-ITP.update_itp!(itp1D, buf, s; ϵ = ϵ)
+ITP.update_itp!(padding_option, extrapolation_option, itp1D, buf, s; ϵ = ϵ)
 @assert norm(c_back - itp1D.coeffs) < eps(T)
 
 
@@ -213,7 +222,40 @@ PLT.plot(tq_range, itp_tq, "--", label = "Interpolations.jl")
 PLT.title("Extrapolation results")
 PLT.legend()
 
-#@assert 1==32
+# First derivative
+mq = tq_range
+dq_tq = [ ITP.query1D_derivative1(u, itp1D) for u in mq ]
+
+h = xx->ITP.query1D(xx, itp1D)
+dq_tq_ND = [ FiniteDiff.finite_difference_derivative(h, u) for u in mq ]
+
+PLT.figure(fig_num)
+fig_num += 1
+PLT.plot(mq, dq_tq, label = "implemented")
+PLT.plot(mq, dq_tq_ND, "--", label = "numerical")
+PLT.title("First derivatives: numerical vs analytical")
+PLT.legend()
+
+println("First derivative discrepancy: Numerical and implemented analytical derivative")
+@show norm(dq_tq - dq_tq_ND)/norm(dq_tq_ND)
+
+# Second derivative
+mq = tq_range
+d2q_tq = [ ITP.query1D_derivative2(u, itp1D) for u in mq ]
+
+dh = xx->FiniteDiff.finite_difference_derivative(h, xx) 
+d2q_tq_ND = [ FiniteDiff.finite_difference_derivative(dh, u) for u in mq ]
+
+PLT.figure(fig_num)
+fig_num += 1
+PLT.plot(mq, d2q_tq, label = "implemented")
+PLT.plot(mq, d2q_tq_ND, "--", label = "numerical")
+PLT.title("Second derivatives: numerical vs analytical")
+PLT.legend()
+
+println("Second derivative discrepancy: Numerical and implemented analytical derivative")
+@show norm(d2q_tq - d2q_tq_ND)/norm(d2q_tq_ND)
+println()
 
 # # Complex values, 1D
 
@@ -232,6 +274,7 @@ Si = [f_imag(x1) for x1 in t_range]
 
 # create interpolator model.
 cNp = 5 # the minimum allowed.
+#cNp = 10 # smoother boundary.
 cbuf = ITP.FitBuffer1D(T, length(Sr); N_padding = cNp)
 citp = ITP.Interpolator1DComplex(cbuf, Sr, Si, first(t_range), last(t_range); ϵ = ϵ)
 
@@ -260,7 +303,7 @@ println()
 
 # determine query intervals.
 query_lb, query_ub = ITP.get_itp_interval(citp)
-tq_range = LinRange(query_lb, query_ub, 10000)
+tq_range = LinRange(query_lb-0.1, query_ub+0.1, 10000)
 
 Yq = [ ITP.query1D(x1, citp) for x1 in tq_range ]
 Sq = [ f(x1) for x1 in tq_range ]
@@ -270,7 +313,74 @@ Sq = [ f(x1) for x1 in tq_range ]
 _, problem_index = findmax(abs.(Sq-Yq))
 xq = tq_range[problem_index]
 
-# Compare with Interpolations
+# visualize.
+mq = tq_range
+q_tq_real = [ real(ITP.query1D(u, citp)) for u in mq ]
+q_tq_imag = [ imag(ITP.query1D(u, citp)) for u in mq ]
+
+PLT.figure(fig_num)
+fig_num += 1
+PLT.plot(t_range, Sr, "o", label = "real, data")
+PLT.plot(t_range, Si, "x", label = "imag, data")
+PLT.plot(mq, q_tq_real, label = "implemented, real")
+PLT.plot(mq, q_tq_imag, label = "implemented, imag")
+PLT.legend()
+PLT.title("interpolationr esult for complex-valued case.")
+#@assert 45==5
+# First derivative
+println("Complex-valued case:")
+mq = tq_range
+dq_tq_real = [ ITP.query1D_derivative1(u, citp)[1] for u in mq ]
+dq_tq_imag = [ ITP.query1D_derivative1(u, citp)[2] for u in mq ]
+
+hr = xx->real(ITP.query1D(xx, citp))
+hi = xx->imag(ITP.query1D(xx, citp))
+dq_tq_ND_real = [ FiniteDiff.finite_difference_derivative(hr, u) for u in mq ]
+dq_tq_ND_imag = [ FiniteDiff.finite_difference_derivative(hi, u) for u in mq ]
+
+PLT.figure(fig_num)
+fig_num += 1
+PLT.plot(mq, dq_tq_real, label = "implemented, real")
+PLT.plot(mq, dq_tq_imag, label = "implemented, imag")
+PLT.plot(mq, dq_tq_ND_real, "o", label = "numerical, real")
+PLT.plot(mq, dq_tq_ND_imag, "x", label = "numerical, imag")
+PLT.title("First derivatives: numerical vs analytical")
+PLT.legend()
+
+println("First derivative discrepancy: Numerical and implemented analytical derivative")
+@show norm(dq_tq_real - dq_tq_ND_real)/norm(dq_tq_ND_real)
+@show norm(dq_tq_imag - dq_tq_ND_imag)/norm(dq_tq_ND_imag)
+
+# Second derivative
+mq = tq_range
+d2q_tq_real = [ ITP.query1D_derivative2(u, citp)[1] for u in mq ]
+d2q_tq_imag = [ ITP.query1D_derivative2(u, citp)[2] for u in mq ]
+
+# # hr = xx->ITP.query1D_derivative1(xx, citp)[1]
+# # hi = xx->ITP.query1D_derivative1(xx, citp)[2]
+# dhr = xx->FiniteDiff.finite_difference_derivative(hr, xx) 
+# dhi = xx->FiniteDiff.finite_difference_derivative(hi, xx) 
+# d2q_tq_ND_real = [ FiniteDiff.finite_difference_derivative(dhr, u) for u in mq ]
+# d2q_tq_ND_imag = [ FiniteDiff.finite_difference_derivative(dhi, u) for u in mq ]
+d2q_tq_ND_real = [ FiniteDiff.finite_difference_hessian(uu->hr(uu[1]), [u;])[1] for u in mq ]
+d2q_tq_ND_imag = [ FiniteDiff.finite_difference_hessian(uu->hi(uu[1]), [u;])[1] for u in mq ]
+
+
+PLT.figure(fig_num)
+fig_num += 1
+PLT.plot(mq, d2q_tq_real, label = "implemented, real")
+PLT.plot(mq, d2q_tq_imag, label = "implemented, imag")
+PLT.plot(mq, d2q_tq_ND_real, "o", label = "numerical, real")
+PLT.plot(mq, d2q_tq_ND_imag, "x", label = "numerical, imag")
+PLT.title("Second derivatives: numerical vs analytical")
+PLT.legend()
+
+println("Second derivative discrepancy: Numerical and implemented analytical derivative")
+@show norm(d2q_tq_real - d2q_tq_ND_real)/norm(d2q_tq_ND_real)
+@show norm(d2q_tq_imag - d2q_tq_ND_imag)/norm(d2q_tq_ND_imag)
+println()
+
+# ## Compare with Interpolations
 
 function setup_itp(
     S_real::Union{Vector{T}, Memory{T}},
@@ -330,27 +440,27 @@ norm(f_tq_exclude_4 - query1D_t_exclude_4) / norm(f_tq_exclude_4) = 1.0769878543
 Discrepancy between Interpolations.jl and our result at our worse fit location of `xq` = 2.4068702902036243:
 abs(itp(xq) - ITP.query1D(xq, itp1D)) / abs(itp(xq)) = 5.838610316292021e-5
 Timing:
-  17.477 ns (0 allocations: 0 bytes)
-  17.136 ns (0 allocations: 0 bytes)
+17.477 ns (0 allocations: 0 bytes)
+17.136 ns (0 allocations: 0 bytes)
 No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
 Complex-valued case.
 norm(Sq - Yq) / norm(Sq) = 1.4161575373924584e-6
 abs(out_query1D - out_oracle) = 5.836378257648921e-5
 abs(out_itp - out_oracle) = 9.870535198214837e-9
-  29.693 ns (0 allocations: 0 bytes)
-  85.670 ns (2 allocations: 48 bytes)
-  42.089 ns (0 allocations: 0 bytes)
-  21.484 ns (0 allocations: 0 bytes)
+29.693 ns (0 allocations: 0 bytes)
+85.670 ns (2 allocations: 48 bytes)
+42.089 ns (0 allocations: 0 bytes)
+21.484 ns (0 allocations: 0 bytes)
 
 Julia Version 1.11.0-rc1
 Commit 3a35aec36d1 (2024-06-25 10:23 UTC)
 Build Info:
-  Official https://julialang.org/ release
+Official https://julialang.org/ release
 Platform Info:
-  OS: Linux (x86_64-linux-gnu)
-  CPU: 16 × AMD Ryzen 7 1700 Eight-Core Processor
-  WORD_SIZE: 64
-  LLVM: libLLVM-16.0.6 (ORCJIT, znver1)
+OS: Linux (x86_64-linux-gnu)
+CPU: 16 × AMD Ryzen 7 1700 Eight-Core Processor
+WORD_SIZE: 64
+LLVM: libLLVM-16.0.6 (ORCJIT, znver1)
 Threads: 1 default, 0 interactive, 1 GC (on 16 virtual cores)
 """
 
