@@ -63,19 +63,23 @@ function query1D_derivative1(x_in::T, itp::Interpolator1D{T}) where T <: Abstrac
     
     k = k_lb
     #out1 = c[begin + k]*eval_cubic_spline(x - k) # non-specialized.
-    out1 = c[begin + k]*eval_dB3_in12(x - k)
+    #out1 = c[begin + k]*eval_dB3_in12(x - k)
+    out1 = c[begin + k]*eval_dB3(x - k)
     #@assert isapprox(eval_dB3(x - k), eval_dB3_in12(x - k))
 
     k = k_lb + 1
-    out2 = c[begin + k]*eval_dB3_in01(x - k)
+    #out2 = c[begin + k]*eval_dB3_in01(x - k)
+    out2 = c[begin + k]*eval_dB3(x - k)
     #@assert isapprox(eval_dB3(x - k), eval_dB3_in01(x - k))
 
     k = k_lb + 2
-    out3 = c[begin + k]*eval_dB3_in01(x - k)
+    #out3 = c[begin + k]*eval_dB3_in01(x - k)
+    out3 = c[begin + k]*eval_dB3(x - k)
     #@assert isapprox(eval_dB3(x - k), eval_dB3_in01(x - k))
     
     k = k_lb + 3
-    out4 = c[begin + k]*eval_dB3_in12(x - k)
+    #out4 = c[begin + k]*eval_dB3_in12(x - k)
+    out4 = c[begin + k]*eval_dB3(x - k)
     #@assert isapprox(eval_dB3(x - k), eval_dB3_in12(x - k))
 
     wrt_x = out1 + out2 + out3 + out4
