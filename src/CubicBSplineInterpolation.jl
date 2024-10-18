@@ -43,4 +43,7 @@ LinearPadding, ConstantPadding, Lagrange4Padding,
 # extrapolation options
 ZeroExtrapolation, ConstantExtrapolation
 
+# update coeffs directly
+public update_coeffs!, get_coeffs_len
+
 end # module CubicBSplineInterpolation

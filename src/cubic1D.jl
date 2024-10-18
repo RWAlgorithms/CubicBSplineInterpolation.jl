@@ -10,7 +10,7 @@
 # end
 
 abstract type AbstractInterpolator1D end
-# interface requirements: have x_start, x_fin as field names.
+# interface requirements: have coeffs, x_start, x_fin as field names.
 # have update_itp! as method
 
 function get_itp_interval(itp::AbstractInterpolator1D)
@@ -18,11 +18,20 @@ function get_itp_interval(itp::AbstractInterpolator1D)
 end
 
 abstract type AbstractInterpolator2D end
-# interface requirements: have x1_start, x2_fin, x2_start, x2_fin, as field names.
+# interface requirements: have coeffs, x1_start, x2_fin, x2_start, x2_fin, as field names.
 # have update_itp! as method
 
 function get_itp_interval(itp::AbstractInterpolator2D)
     return itp.x1_start, itp.x1_fin, itp.x2_start, itp.x2_fin
+end
+
+function update_coeffs!(itp::Union{AbstractInterpolator1D, AbstractInterpolator2D}, v::AbstractArray)
+    copyto!(itp.coeffs, v)
+    return nothing
+end
+
+function get_coeffs_len(itp::Union{AbstractInterpolator1D, AbstractInterpolator2D})
+    return length(itp.coeffs)
 end
 
 # pre-allocated version
