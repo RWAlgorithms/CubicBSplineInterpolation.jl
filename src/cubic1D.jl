@@ -73,6 +73,7 @@ function get_coeffs!(
     # @show get_data_length(buf), length(s)
     get_data_length(buf) == length(s) || error("Length mismatch.")
     length(s) > 2 || error("Must provide at least 2 input samples.")
+    stride(s, 1) == 1 || error("The 1-D array of samples, s, must have stride 1.")
 
     s_ext, c_plus = buf.s_extension, buf.c_plus
 
@@ -127,7 +128,7 @@ function _post_process_coeffs!(::ZeroExtrapolation, c::AbstractVector, Np::Integ
 end
 
 # Box 2, Unser 1999.
-function get_coeffs!(c_minus::Union{Memory{T},Vector{T}}, s::Union{Memory{T},Vector{T}}, ϵ::T) where T <: AbstractFloat
+function get_coeffs!(c_minus::Union{Memory{T},Vector{T}}, s::AbstractVector{T}, ϵ::T) where T <: AbstractFloat
     length(c_minus) == length(s) || error("Length mismatch.")
     
     c_plus = Memory{T}(undef, length(s))
@@ -292,7 +293,7 @@ struct Interpolator1D{T <: AbstractFloat} <: AbstractInterpolator1D
 end
 
 # option is for dispatch. itp mutates, is output. Mutates buf, 
-function update_itp!(padding_option::PaddingOption, extrapolation_option::ExtrapolationOption, itp::Interpolator1D, buf::FitBuffer1D, s::Union{Memory{T},Vector{T}}; ϵ::T = eps(T)*2) where T <: AbstractFloat
+function update_itp!(padding_option::PaddingOption, extrapolation_option::ExtrapolationOption, itp::Interpolator1D, buf::FitBuffer1D, s::AbstractVector{T}; ϵ::T = eps(T)*2) where T <: AbstractFloat
     length(s) == get_data_length(buf) || error("Length mismatch.")
 
     x_start, x_fin = get_itp_interval(itp)
@@ -301,7 +302,7 @@ function update_itp!(padding_option::PaddingOption, extrapolation_option::Extrap
 end
 
 # convenince
-function update_itp!(itp::Interpolator1D, buf::FitBuffer1D, s::Union{Memory{T},Vector{T}}; ϵ::T = eps(T)*2) where T <: AbstractFloat
+function update_itp!(itp::Interpolator1D, buf::FitBuffer1D, s::AbstractVector{T}; ϵ::T = eps(T)*2) where T <: AbstractFloat    
     return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, s; ϵ = ϵ)
 end
 

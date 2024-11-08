@@ -56,9 +56,12 @@ itp1D = ITP.Interpolator1D(
     buf, s, a, b; ϵ = ϵ,
 ) # allocates itp1D.coeffs.
 
-# timings
-c_backup = copy(itp1D.coeffs)
-#@btime ITP.update_itp!($itp1D, $buf, $s; ϵ = $ϵ); # doesn't allocate.
+## timings
+# c_backup = copy(itp1D.coeffs)
+# s_SA = view(s, 1:length(s))
+# @btime ITP.update_itp!($itp1D, $buf, $s_SA; ϵ = $ϵ); # doesn't allocate.
+# @show norm(itp1D.coeffs - c_backup)
+# @assert 1==23
 """
 N = 1000
 5.617 μs (0 allocations: 0 bytes)

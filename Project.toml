@@ -1,7 +1,7 @@
 name = "CubicBSplineInterpolation"
 uuid = "cea239a1-aef7-4735-a0ad-35c493ad27cc"
 authors = ["Roy Chih Chung Wang <roy.c.c.wang@proton.me>"]
-version = "0.4.4"
+version = "0.4.5"
 
 [deps]
 
