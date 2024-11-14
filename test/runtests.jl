@@ -118,7 +118,7 @@ end
     N_tests = 1000
     xs = [ convertcompactdomain(rand(rng, T), zero(T), one(T), test_lb, test_ub) for _ = 1:N_tests ]
 
-    N_coeffs = ITP.get_coeffs_length(itp1D)
+    N_coeffs = ITP.get_num_coeffs(itp1D)
     c = zeros(T, N_coeffs)
     for _ = 1:N_coeffs_to_test
         

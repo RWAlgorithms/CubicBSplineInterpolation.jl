@@ -51,10 +51,10 @@ struct Interpolator1DComplex{T <: AbstractFloat} <: AbstractInterpolator1D
 
         A, tmp_r = create_query_cache(x_start, x_fin, length(s_real), Np)
         
-        c_real = Memory{T}(undef, get_coeffs_length(buf))
+        c_real = Memory{T}(undef, get_num_coeffs(buf))
         get_coeffs!(padding_option, extrapolation_option, c_real, buf, s_real, tmp_r, ϵ)
 
-        c_imag = Memory{T}(undef, get_coeffs_length(buf))
+        c_imag = Memory{T}(undef, get_num_coeffs(buf))
         get_coeffs!(padding_option, extrapolation_option, c_imag, buf, s_imag, tmp_r, ϵ)
 
         size(c_real) == size(c_imag) || error("Size mismatch for coefficients. Please file bug report.")

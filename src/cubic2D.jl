@@ -33,8 +33,8 @@ struct FitBuffer2D{T <: AbstractFloat}
 end
 
 function get_coeffs_size(s::FitBuffer2D)
-    M1 = get_coeffs_length(s.buf_x1)
-    M2 = get_coeffs_length(s.buf_x2)
+    M1 = get_num_coeffs(s.buf_x1)
+    M2 = get_num_coeffs(s.buf_x2)
     return (M1,M2)
 end
 

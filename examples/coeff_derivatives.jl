@@ -58,7 +58,7 @@ itp1D = ITP.Interpolator1D(
     buf, s, a, b; ϵ = ϵ,
 ) # allocates itp1D.coeffs.
 
-N_params = ITP.get_coeffs_length(itp1D)
+N_params = ITP.get_num_coeffs(itp1D)
 #c = randn(rng, T, N_params)
 c = f.(LinRange(first(t_range), last(t_range), N_params))
 ITP.update_coeffs!(itp1D, c)

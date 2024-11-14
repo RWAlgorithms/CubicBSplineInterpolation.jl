@@ -30,7 +30,7 @@ function update_coeffs!(itp::Union{AbstractInterpolator1D, AbstractInterpolator2
     return nothing
 end
 
-function get_coeffs_length(itp::Union{AbstractInterpolator1D, AbstractInterpolator2D})
+function get_num_coeffs(itp::Union{AbstractInterpolator1D, AbstractInterpolator2D})
     return length(itp.coeffs)
 end
 
@@ -55,7 +55,7 @@ function get_data_length(s::FitBuffer1D)
     return length(s.s_extension) - s.N_padding*2 # padded two samples at each boundary.
 end
 
-function get_coeffs_length(s::FitBuffer1D)
+function get_num_coeffs(s::FitBuffer1D)
     return length(s.c_plus)
 end
 
@@ -280,7 +280,7 @@ struct Interpolator1D{T <: AbstractFloat} <: AbstractInterpolator1D
         # A = IntervalConversion(first(x_range_ext), last(x_range_ext), N_ext)
         A, tmp_r = create_query_cache(x_start, x_fin, length(s), Np)
         
-        c = Memory{T}(undef, get_coeffs_length(buf))
+        c = Memory{T}(undef, get_num_coeffs(buf))
         get_coeffs!(pading_option, extrapolation_option, c, buf, s, tmp_r, ϵ)
 
         return new{T}(c, A, x_start, x_fin)
@@ -307,7 +307,7 @@ function update_itp!(itp::Interpolator1D, buf::FitBuffer1D, s::AbstractVector{T}
 end
 
 function update_coeffs!(itp::Interpolator1D, c::AbstractVector{T}) where T <: AbstractFloat
-    length(c) == get_coeffs_length(itp) || error("Length mismatch.")
+    length(c) == get_num_coeffs(itp) || error("Length mismatch.")
 
     copy!(itp.coeffs, c)
     return nothing
