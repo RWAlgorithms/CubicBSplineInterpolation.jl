@@ -30,7 +30,7 @@ function update_coeffs!(itp::Union{AbstractInterpolator1D, AbstractInterpolator2
     return nothing
 end
 
-function get_coeffs_len(itp::Union{AbstractInterpolator1D, AbstractInterpolator2D})
+function get_coeffs_length(itp::Union{AbstractInterpolator1D, AbstractInterpolator2D})
     return length(itp.coeffs)
 end
 
@@ -306,7 +306,18 @@ function update_itp!(itp::Interpolator1D, buf::FitBuffer1D, s::AbstractVector{T}
     return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, s; ϵ = ϵ)
 end
 
+function update_coeffs!(itp::Interpolator1D, c::AbstractVector{T}) where T <: AbstractFloat
+    length(c) == get_coeffs_length(itp) || error("Length mismatch.")
 
+    copy!(itp.coeffs, c)
+    return nothing
+end
+
+"""
+    query1D(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
+
+Returns spline model query, which is of data type `T`.
+"""
 function query1D(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
     c, A = itp.coeffs, itp.query_cache
 
@@ -342,4 +353,54 @@ function query1D(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
     out4 = c[begin + k]*eval_cubic_spline_in12(x - k)
 
     return out1 + out2 + out3 + out4
+end
+
+"""
+    query1D_parameter_derivatives(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
+
+Returns spline model query, `k1`, `k2`, `k3`, `k4`, `d1`, `d2`, `d3`, `d4`.
+
+All return variable types are of type `T`.
+
+The `k` variables are the index position (with respect to 1-indexing convention on `itp.coeffs`) of the non-zero gradient values, and `d` variables are the corresponding gradient entries to `k`.
+"""
+function query1D_parameter_derivatives(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
+    c, A = itp.coeffs, itp.query_cache
+
+    x = to_std_interval(x_in, A.a, A.d_div_bma)
+    
+    # clamp x to be within bounds.
+    # This has the effect that the border (2 pixels, inclusive) and extrapolation behavior is clamped (i.e. a constant) to the closest non-border interpolation.
+    # this ensures no out-of-bounds access to `c` for index `kp1`.
+    #x = clamp(x, 2, length(c)-1-2)
+    x_lb = T(2)
+    
+    x_ub = T(size(c,1)-1-2)
+    if x < x_lb
+        x = x_lb
+    elseif x > x_ub
+        x = x_ub
+    end
+
+    #k_lb = ceil(Int, x-2)
+    k_lb = trunc(Int, x)-1
+    
+    k1 = k_lb
+    #out1 = c[begin + k]*eval_cubic_spline(x - k) # non-specialized.
+    d1 = eval_cubic_spline_in12(x - k1)
+    out1 = c[begin + k1]*d1
+
+    k2 = k_lb + 1
+    d2 = eval_cubic_spline_in01(x - k2)
+    out2 = c[begin + k2]*d2
+
+    k3 = k_lb + 2
+    d3 = eval_cubic_spline_in01(x - k3)
+    out3 = c[begin + k3]*d3
+    
+    k4 = k_lb + 3
+    d4 = eval_cubic_spline_in12(x - k4)
+    out4 = c[begin + k4]*d4
+
+    return out1 + out2 + out3 + out4, k1+1, k2+1, k3+1, k4+1, d1, d2, d3, d4
 end

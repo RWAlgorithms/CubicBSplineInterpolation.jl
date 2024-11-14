@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright © 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
+
 using Test, LinearAlgebra, Random
 
 import CubicBSplineInterpolation as ITP
@@ -19,7 +22,7 @@ import CubicBSplineInterpolation as ITP
     f = xx->exp(-(1/17)*(xx/3)^2) # oracle function.
     s = f.(t_range) # generate interpolation samples.
 
-    N_padding = 2 # This needs to be >= 2 for the interpolation result to fully match up at all sampling locations.
+    N_padding = 5 # This needs to be >= 2 for the interpolation result to fully match up at all sampling locations.
     buf = ITP.FitBuffer1D(T, length(s); N_padding = N_padding)
     
     # packaged version. Check implementation of interior interval.
@@ -52,4 +55,79 @@ import CubicBSplineInterpolation as ITP
         results2 = collect( ITP.query1D(u, itp1D) for u in tq_range )
         @test norm(results - results2)/norm(results) < zero_tol # should be zero.
     end
+end
+
+import FiniteDiff
+
+"""
+    convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T
+
+converts compact domain x ∈ [a,b] to compact domain out ∈ [c,d].
+"""
+function convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T where T <: Real
+    return (x-a)*(d-c)/(b-a)+c
+end
+
+function query1D_params_as_input!(itp, c::AbstractVector, x0::AbstractFloat)
+    ITP.update_coeffs!(itp, c)
+    return ITP.query1D(x0, itp)
+end
+
+function test_param_derivatives!(itp1D, c_test, x_test, zero_tol)
+
+    ITP.update_coeffs!(itp1D, c_test)
+    h = cc->query1D_params_as_input!(itp1D, cc, x_test)
+    dq_dc_ND = FiniteDiff.finite_difference_gradient(h, c_test)
+
+    q_x_oracle = ITP.query1D(x_test, itp1D)
+    q_x, k1, k2, k3, k4, d1, d2, d3, d4 = ITP.query1D_parameter_derivatives(x_test, itp1D)
+
+    r = copy(dq_dc_ND)
+    r[k1] -= d1
+    r[k2] -= d2
+    r[k3] -= d3
+    r[k4] -= d4
+    #@show norm(r) # should be zero if analytic gradient works.
+    @assert norm(r) < zero_tol
+    @assert abs(q_x_oracle - q_x) < zero_tol
+end
+
+# ∂q/∂c, where q is the query function.
+@testset "1D coeffs derivative test" begin
+
+    N_coeffs_to_test = 50
+    T = Float64
+    rng = Random.Xoshiro(0)
+
+    zero_tol = T(1e-10)
+
+    # set up interpolator domain.
+    ϵ = T(1e-8)
+    N = 1000
+    a = T(-10)
+    b = T(3.4)
+    buf = ITP.FitBuffer1D(T, N; N_padding = 10)
+    itp1D = ITP.Interpolator1D(
+        ITP.LinearPadding(),
+        ITP.ConstantExtrapolation(),
+        buf, randn(rng, T, N), a, b; ϵ = ϵ,
+    )
+
+    test_lb = a - T(4)
+    test_ub = b + T(4)
+    N_tests = 1000
+    xs = [ convertcompactdomain(rand(rng, T), zero(T), one(T), test_lb, test_ub) for _ = 1:N_tests ]
+
+    N_coeffs = ITP.get_coeffs_length(itp1D)
+    c = zeros(T, N_coeffs)
+    for _ = 1:N_coeffs_to_test
+        
+        randn!(rng, c)
+        
+        for x in xs
+            test_param_derivatives!(itp1D, c, x, zero_tol)
+        end
+    end
+
+
 end
