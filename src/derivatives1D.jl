@@ -33,7 +33,7 @@ end
 function eval_B1(x::T) where T <: AbstractFloat
     
     abs_x = abs(x)
-    if zero(T) < abs_x < one(T)
+    if zero(T) <= abs_x < one(T)
         return one(T) - abs_x
     end
 
@@ -186,7 +186,7 @@ function query1D_derivative2(x_in::T, itp::Interpolator1D{T}) where T <: Abstrac
     out4 = c[begin + k]*eval_d2B3(x - k)
     #@assert 1 <= abs(x - k) <= 2
 
-    
+    # @show out1, out2, out3, out4 # debug.
     wrt_x = out1 + out2 + out3 + out4
     d_x_wrt_x_in = A.d_div_bma
     return wrt_x*d_x_wrt_x_in^2

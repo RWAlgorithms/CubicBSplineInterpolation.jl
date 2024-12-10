@@ -42,3 +42,9 @@ function from_std_interval(u::T, a::T, b::T, d::Int) where T <: AbstractFloat
     # (x-a)*d/(b-a) = u
     return u*(b-a)/d + a
 end
+
+# use.
+function from_std_interval(u::T, a::T, d_div_bma::T) where T <: AbstractFloat
+    # u = (x-a)*d_div_bma
+    return u/d_div_bma + a
+end

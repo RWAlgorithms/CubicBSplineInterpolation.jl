@@ -355,6 +355,38 @@ function query1D(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
     return out1 + out2 + out3 + out4
 end
 
+# TODO in progress. This is not C^2 differentiable, but is C^1 differentiable.
+function query1D_linear_extrapolation(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
+    
+    if x_in < itp.x_start
+        #
+
+        x0 = itp.x_start
+
+        y0 = query1D(x0, itp)
+        m = query1D_derivative1(x0, itp)
+        y_out = m* (x_in-x0) + y0
+        return y_out
+
+    elseif x_in > itp.x_fin
+        #
+
+        x0 = itp.x_fin
+
+        y0 = query1D(x0, itp)
+        m = query1D_derivative1(x0, itp)
+        y_out = m* (x_in-x0) + y0
+        return y_out
+    end
+    
+    return query1D(x_in, itp)
+
+    #if itp.x_start < x_in < itp.x_fin
+    #    return query1D(x_in, itp)
+    #end
+end
+
+
 """
     query1D_parameter_derivatives(x_in::T, itp::Interpolator1D{T}) where T <: AbstractFloat
 

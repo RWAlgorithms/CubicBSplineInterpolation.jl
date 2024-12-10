@@ -14,7 +14,7 @@ const T = Float64
 
 #ϵ = T(1e-16)
 ϵ = T(1e-8)
-Nq = 757
+Nq = 17570
 N = 1000
 #N = 7 # debug
 a = T(-10)
@@ -22,9 +22,10 @@ b = T(3.4)
 t_range = LinRange(a, b, N)
 #f = xx->sinc(sin((xx/5)^3+(xx/20)^2+4.32)) # not bad
 #f = xx->sin(xx) # not bad.
-#f = xx->(exp(-(1/17)*(xx-3)^2) +55) # runge effect near right boundary.
-f = xx->exp(-(1/17)*(xx-3)^2) # runge effect near right boundary.
-#f = xx->(exp(-(1/17)*(xx-3)^2) + sin(xx-1.2)) # runge effect near right boundary.
+#f = xx->(exp(-(1/17)*(xx-3)^2) +55)
+f = xx->(sinc(xx)+exp(-(1/17)*(xx-3)^2)+1)
+f = xx->(exp(-(1/17)*(xx-3)^2)+1)
+f = xx->(exp(-(1/17)*(xx-3)^2) + sin(xx-1.2))
 
 #f = xx->exp(-(1/17)*(xx/3)^2) # not bad.
 #f = xx->sinc(xx)
@@ -45,9 +46,9 @@ tmp_r = LinRange(a, b, length(s))
 #Np = 8
 Np = 10
 buf = ITP.FitBuffer1D(T, length(s); N_padding = Np)
-#padding_option = ITP.Lagrange4Padding()
+padding_option = ITP.Lagrange4Padding()
 #padding_option = ITP.ConstantPadding()
-padding_option = ITP.LinearPadding()
+#padding_option = ITP.LinearPadding()
 #extrapolation_option = ITP.ZeroExtrapolation()
 extrapolation_option = ITP.ConstantExtrapolation()
 itp1D = ITP.Interpolator1D(
@@ -56,21 +57,6 @@ itp1D = ITP.Interpolator1D(
     buf, s, a, b; ϵ = ϵ,
 ) # allocates itp1D.coeffs.
 
-## timings
-# c_backup = copy(itp1D.coeffs)
-# s_SA = view(s, 1:length(s))
-# @btime ITP.update_itp!($itp1D, $buf, $s_SA; ϵ = $ϵ); # doesn't allocate.
-# @show norm(itp1D.coeffs - c_backup)
-# @assert 1==23
-"""
-N = 1000
-5.617 μs (0 allocations: 0 bytes)
-"""
-
-#@btime ITP.Interpolator1D($buf, $s, $a, $b; ϵ = $ϵ);
-"""
-6.115 μs (2 allocations: 8.03 KiB)
-"""
 
 # test update_itp!
 c_back = copy(itp1D.coeffs)
@@ -91,25 +77,53 @@ q_ts = collect( ITP.query1D(u, itp1D) for u in ts )
 # Query range.
 query_lb, query_ub = ITP.get_itp_interval(itp1D)
 
-tq_range = LinRange(query_lb, query_ub, Nq)
-#tq_range = LinRange(a, b, Nq) # debug for error plot
-#tq_range = t_range # debug for error plot
+#tq_range = LinRange(query_lb, query_ub, Nq)
+tq_range = LinRange(query_lb-1, query_ub+1, Nq)
+tq_range = LinRange(query_lb-10, query_ub+10, Nq)
+
+## zoom.
+#tq_range = LinRange(T(query_ub-0.1), T(query_ub+0.1), Nq)
+#tq_range = LinRange(T(3.3), T(3.5), Nq)
 
 # query.
-#query_reference_t = collect( ITP.query(u, c, A) for u in tq_range )
 query1D_t = collect( ITP.query1D(u, itp1D) for u in tq_range )
+#query1DLE_t = collect( ITP.query1D_linear_extrapolation(u, itp1D) for u in tq_range )
+
+
+etp1D = ITP.QuadraticExtrapolator1D(itp1D)
+q_tq = collect( ITP.query1D(u, etp1D) for u in tq_range )
+
 
 f_tq = f.(tq_range) # oracle
 
 # You can see the border region is not in agreement.
 PLT.figure(fig_num)
 fig_num += 1
-PLT.plot(t_range, s, label = "data", "x")
+#PLT.plot(t_range, s, label = "data", "x")
 PLT.plot(tq_range, f_tq, label = "oracle")
-PLT.plot(tq_range, query1D_t, label = "query1D()")
+PLT.plot(tq_range, query1D_t, label = "query1D()", "--")
+#PLT.plot(tq_range, query1DLE_t, label = "linear extrapolation", "--")
+PLT.plot(tq_range, q_tq, label = "extrapolation", "x")
 PLT.legend()
+PLT.title("Extrapolation variant of query1D()")
 
-#@assert 1==23
+# TODO There is no variant of analytical derivatives for QuadraticExtrapolation.
+# work on this for derivative 1 and 2, then move onto digital shadow.
+
+# view derivatives
+
+df_tqs = [ ITP.query1D_derivative1(u, itp1D) for u in tq_range ]
+d2f_tqs = [ ITP.query1D_derivative2(u, itp1D) for u in tq_range ]
+
+PLT.figure(fig_num)
+fig_num += 1
+PLT.plot(tq_range, query1D_t, label = "query function")
+PLT.plot(tq_range, df_tqs, label = "first derivative", "--")
+PLT.plot(tq_range, d2f_tqs, label = "second derivative", "x")
+PLT.legend()
+PLT.title("Derivatives")
+# Second derivative is not differentiable
+
 
 
 println("Relative l-2 error over the interpolation region.")
