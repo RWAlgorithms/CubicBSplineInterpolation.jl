@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright © 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
 
-# This example assumes you have gone through the 1D tutorial, so the padding and extrapolation options are not discussed here.
-
 if !isdefined(Main, :CubicBSplineInterpolation)
     include("a.jl")
 end
@@ -10,12 +8,10 @@ end
 PLT.close("all")
 fig_num = 1
 
+#const T = Float64
 T = Float32
 
-# The accuracy tuning parameter for computing the spline filter coefficients. See `ϵ` from Box 2 of  DOI: 10.1109/79.799930. for more details.
-ϵ = eps(T) * 2
-
-# Specify 
+ϵ = eps(T)*2
 a1 = T(-4.0)
 b1 = T(3.45)
 N1 = 100
@@ -24,12 +20,12 @@ b2 = T(1.23)
 N2 = 113
 t_range1 = LinRange(a1, b1, N1)
 t_range2 = LinRange(a2, b2, N2)
-f = (xx, yy) -> sinc((xx)^2 + (yy)^2 + 20)
-S = [f(x1, x2) for x1 in t_range1, x2 in t_range2]
+f = (xx,yy)->sinc((xx)^2+(yy)^2+20)
+S = [f(x1,x2) for x1 in t_range1, x2 in t_range2]
 
 
 # fit.
-buf = ITP.FitBuffer2D(T, size(S); N_padding=(10, 10))
+buf = ITP.FitBuffer2D(T, size(S); N_padding = (10,10))
 #itp2D = ITP.Interpolator2D(buf, S, a1, b1, a2, b2; ϵ = ϵ)
 
 # padding_option = ITP.LinearPadding()
@@ -41,16 +37,16 @@ extrapolation_option = ITP.ConstantExtrapolation()
 itp2D = ITP.Interpolator2D(
     padding_option,
     extrapolation_option,
-    buf, S, a1, b1, a2, b2; ϵ=ϵ,
+    buf, S, a1, b1, a2, b2; ϵ = ϵ,
 )
 
 # test update_itp!
 c_back = copy(itp2D.coeffs)
 S_random = randn(Random.Xoshiro(0), T, size(S))
-ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S_random; ϵ=ϵ)
-@assert norm(c_back - itp2D.coeffs) > eps(T) * 10
+ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S_random; ϵ = ϵ)
+@assert norm(c_back - itp2D.coeffs) > eps(T)*10
 
-ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S; ϵ=ϵ)
+ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S; ϵ = ϵ)
 @assert norm(c_back - itp2D.coeffs) < eps(T)
 
 # timing
@@ -66,8 +62,8 @@ size(S) = (100, 113)
 246.662 μs (4 allocations: 62.50 KiB)
 """
 
-x1 = (t_range1[44] + t_range1[44]) / 2
-x2 = (t_range2[44] + t_range2[44]) / 2
+x1 = (t_range1[44] + t_range1[44])/2
+x2 = (t_range2[44] + t_range2[44])/2
 out = ITP.query2D(x1, x2, itp2D)
 #@btime ITP.query2D($x1, $x2, $itp2D)
 """
@@ -78,13 +74,13 @@ out = ITP.query2D(x1, x2, itp2D)
 q_S = [ITP.query2D(x1, x2, itp2D) for x1 in t_range1, x2 in t_range2]
 println("Residual fit error. This should be near zero.")
 @show norm(S - q_S)
-@show norm(S - q_S) / norm(S)
+@show norm(S - q_S)/norm(S)
 println()
 
 # query.
 
-Nq1 = N1 * 10
-Nq2 = N2 * 10
+Nq1 = N1*10
+Nq2 = N2*10
 aq1, bq1 = t_range1[begin], t_range1[end]
 aq2, bq2 = t_range2[begin], t_range2[end]
 tq_range1 = LinRange(aq1, bq1, Nq1)
@@ -96,7 +92,7 @@ Sq = [f(x1, x2) for x1 in tq_range1, x2 in tq_range2]
 println("Real-valued case.")
 
 println("Relative error in the query regions:")
-@show norm(Sq - Yq) / norm(Sq)
+@show norm(Sq-Yq)/norm(Sq)
 
 
 PLT.figure(fig_num)
@@ -121,7 +117,7 @@ fig_num += 1
 PLT.imshow(Yq)
 PLT.title("extrapolation length: $(extrapolation_len), Yq")
 
-@assert 3 == 4
+# @assert 3==4
 
 # Timing
 x1 = tq_range1[342]
@@ -138,7 +134,7 @@ function setup_itp(
     A::Matrix{T},
     A_r,
     A_λ,
-) where {T<:AbstractFloat}
+    ) where T <: AbstractFloat
 
     real_itp = Interpolations.interpolate(A, Interpolations.BSpline(Interpolations.Cubic(Interpolations.Line(Interpolations.OnGrid()))))
     #real_itp = Interpolations.interpolate(real.(A), Interpolations.BSpline(Interpolations.Quadratic(Interpolations.Line(Interpolations.OnGrid()))))
@@ -152,10 +148,10 @@ itp = setup_itp(S, t_range1, t_range2)
 
 out_itp = itp(x1, x2)
 out_query2D = ITP.query2D(x1, x2, itp2D)
-out_oracle = f(x1, x2)
+out_oracle = f(x1,x2)
 
-@show abs(out_query2D - out_oracle) / norm(out_oracle)
-@show abs(out_itp - out_oracle) / norm(out_oracle)
+@show abs(out_query2D - out_oracle)/norm(out_oracle)
+@show abs(out_itp - out_oracle)/norm(out_oracle)
 
 # @btime $f($x1, $x2)
 # @btime $itp($x1, $x2) # From Interpolations.jl # does a little worse for Float32 on Ryzen 7 1700.
@@ -173,18 +169,18 @@ out_oracle = f(x1, x2)
 println("Complex-valued case.")
 
 # Specify oracles for the real and imaginary parts.
-f_real = (xx, yy) -> sinc((xx)^2 + (yy)^2)
-f_imag = (xx, yy) -> tanh((xx)^2 + (yy)^2)
-f = (xx, yy) -> Complex(sinc((xx)^2 + (yy)^2), tanh((xx)^2 + (yy)^2)) # This allocates for some reason. Perhaps due to "boxing". Complex(f_real(xx,yy), f_imag(xx,yy))
+f_real = (xx,yy)->sinc((xx)^2+(yy)^2)
+f_imag = (xx,yy)->tanh((xx)^2+(yy)^2)
+f = (xx,yy)->Complex(sinc((xx)^2+(yy)^2), tanh((xx)^2+(yy)^2)) # This allocates for some reason. Perhaps due to "boxing". Complex(f_real(xx,yy), f_imag(xx,yy))
 
 t_range1 = LinRange(T(-3), T(3), 1000)
 t_range2 = LinRange(T(-1.23), T(4.56), 783)
 
 # Generate samples.
-Sr = [f_real(x1, x2) for x1 in t_range1, x2 in t_range2]
-Si = [f_imag(x1, x2) for x1 in t_range1, x2 in t_range2]
+Sr = [f_real(x1,x2) for x1 in t_range1, x2 in t_range2]
+Si = [f_imag(x1,x2) for x1 in t_range1, x2 in t_range2]
 
-cbuf = ITP.FitBuffer2D(T, size(Sr); N_padding=(8, 7))
+cbuf = ITP.FitBuffer2D(T, size(Sr); N_padding = (8,7))
 citp = ITP.Interpolator2DComplex(cbuf, Sr, Si, first(t_range1), last(t_range1), first(t_range2), last(t_range2))
 
 # test update_itp!
@@ -192,11 +188,11 @@ cr_back = copy(citp.real_coeffs)
 ci_back = copy(citp.imag_coeffs)
 Sr_random = randn(Random.Xoshiro(0), T, size(Sr))
 Si_random = randn(Random.Xoshiro(0), T, size(Si))
-ITP.update_itp!(citp, cbuf, Sr_random, Si_random; ϵ=ϵ)
-@assert norm(cr_back - citp.real_coeffs) > eps(T) * 10
-@assert norm(ci_back - citp.imag_coeffs) > eps(T) * 10
+ITP.update_itp!(citp, cbuf, Sr_random, Si_random; ϵ = ϵ)
+@assert norm(cr_back - citp.real_coeffs) > eps(T)*10
+@assert norm(ci_back - citp.imag_coeffs) > eps(T)*10
 
-ITP.update_itp!(citp, cbuf, Sr, Si; ϵ=ϵ)
+ITP.update_itp!(citp, cbuf, Sr, Si; ϵ = ϵ)
 @assert norm(cr_back - citp.real_coeffs) < eps(T)
 @assert norm(ci_back - citp.imag_coeffs) < eps(T)
 
@@ -206,9 +202,9 @@ query_lb1, query_ub1, query_lb2, query_ub2 = ITP.get_itp_interval(citp)
 tq_range1 = LinRange(query_lb1, query_ub1, 10000)
 tq_range2 = LinRange(query_lb2, query_ub2, 1473)
 
-Yq = [ITP.query2D(x1, x2, citp) for x1 in tq_range1, x2 in tq_range2]
-Sq = [f(x1, x2) for x1 in tq_range1, x2 in tq_range2]
-@show norm(Sq - Yq) / norm(Sq)
+Yq = [ ITP.query2D(x1, x2, citp) for x1 in tq_range1, x2 in tq_range2 ]
+Sq = [ f(x1, x2) for x1 in tq_range1, x2 in tq_range2 ]
+@show norm(Sq-Yq)/norm(Sq)
 
 # Compare with Interpolations
 
@@ -217,7 +213,7 @@ function setup_itp(
     S_imag::Matrix{T},
     A_r,
     A_λ,
-) where {T<:AbstractFloat}
+    ) where T <: AbstractFloat
 
     real_itp = Interpolations.interpolate(S_real, Interpolations.BSpline(Interpolations.Cubic(Interpolations.Line(Interpolations.OnGrid()))))
     real_sitp = Interpolations.scale(real_itp, A_r, A_λ)
@@ -236,16 +232,16 @@ struct ComplexItp{IT}
 end
 
 function query_itp(x, y, A::ComplexItp)
-    return Complex(A.real_itp(x, y), A.imag_itp(x, y))
+    return Complex(A.real_itp(x,y), A.imag_itp(x,y))
 end
 
 itp_real, itp_imag = setup_itp(Sr, Si, t_range1, t_range2)
 itp_struct = ComplexItp(itp_real, itp_imag)
-itp = (xx, yy) -> query_itp(xx, yy, itp_struct) # doing Complex(itp_real(xx,yy), itp_imag(xx,yy)) leads to allocation for some reason.
+itp = (xx,yy)->query_itp(xx,yy, itp_struct) # doing Complex(itp_real(xx,yy), itp_imag(xx,yy)) leads to allocation for some reason.
 
 out_itp = itp(x1, x2)
 out_query2D = ITP.query2D(x1, x2, citp)
-out_oracle = f(x1, x2)
+out_oracle = f(x1,x2)
 
 @show abs(out_query2D - out_oracle)
 @show abs(out_itp - out_oracle)

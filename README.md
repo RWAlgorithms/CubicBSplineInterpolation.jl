@@ -133,7 +133,6 @@ using BenchmarkTools
 a, b = first(t_range), last(t_range)
 @btime ITP.Interpolator1DComplex($cbuf, $Sr, $Si, $a, $b; ϵ = $ϵ) # allocates. Used only to generate `citp`.
 @btime ITP.update_itp!($citp, $cbuf, $Sr, $Si; ϵ = $ϵ) # Does not allocate.
-
 ```
 
 ## Example: 2D, real-valued
@@ -293,6 +292,8 @@ g11r, g12r, g22r, g11i, g12i, g22i = query2D_derivative2(x1, x2, itp)
 ```
 The last letter for the left-hand side variables indicate whether the variable is for the real (`r`) or imaginary (`i`) part.
 
+# Work in progress
+The example scripts in `/examples` are being revised. So far, `demo1D` has been processed. The original 1D and 2D example scripts can be found in `/examples/AD/`.
 
 # Reference
 1. Michael Unser, Splines: a perfect fit for signal and image processing, 1999, DOI: 10.1109/79.799930.
