@@ -252,6 +252,16 @@ struct Interpolator1D{T<:AbstractFloat} <: AbstractInterpolator1D
     x_start::T
     x_fin::T
 
+    # deepcopy
+    function Interpolator1D(A::Interpolator1D{T}) where {T<:AbstractFloat}
+        return new{T}(
+            copy(A.coeffs),
+            IntervalConversion(A.query_cache.a, A.query_cache.d_div_bma),
+            A.x_start,
+            A.x_fin,
+        )
+    end
+
     # # The boundary 2 samples (e.g. in the Δx*2 region).won't match the corresponding boundary 2 samples in s.
     # function Interpolator1D(s::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
     #     A = IntervalConversion(x_start, x_fin, length(s))
@@ -294,7 +304,7 @@ struct Interpolator1D{T<:AbstractFloat} <: AbstractInterpolator1D
     end
 end
 
-# option is for dispatch. itp mutates, is output. Mutates buf, 
+# option is for dispatch. itp mutates, is output. Mutates buf,
 function update_itp!(padding_option::PaddingOption, extrapolation_option::ExtrapolationOption, itp::Interpolator1D, buf::FitBuffer1D, s::AbstractVector{T}; ϵ::T=eps(T) * 2) where {T<:AbstractFloat}
     length(s) == get_data_length(buf) || error("Length mismatch.")
 

@@ -48,6 +48,19 @@ struct Interpolator2D{T<:AbstractFloat} <: AbstractInterpolator2D
     x2_start::T
     x2_fin::T
 
+    # deepcopy
+    function Interpolator2D(A::Interpolator2D{T}) where {T<:AbstractFloat}
+        return new{T}(
+            copy(A.coeffs),
+            IntervalConversion(A.x1_query_cache.a, A.x1_query_cache.d_div_bma),
+            IntervalConversion(A.x2_query_cache.a, A.x2_query_cache.d_div_bma),
+            A.x1_start,
+            A.x1_fin,
+            A.x2_start,
+            A.x2_fin,
+        )
+    end
+
     # # no padding.
     # function Interpolator2D(S::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
 

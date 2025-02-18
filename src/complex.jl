@@ -13,6 +13,17 @@ struct Interpolator1DComplex{T<:AbstractFloat} <: AbstractInterpolator1D
     x_start::T
     x_fin::T
 
+    # deepcopy
+    function Interpolator1DComplex(A::Interpolator1DComplex{T}) where {T<:AbstractFloat}
+        return new{T}(
+            copy(A.real_coeffs),
+            copy(A.imag_coeffs),
+            IntervalConversion(A.query_cache.a, A.query_cache.d_div_bma),
+            A.x_start,
+            A.x_fin,
+        )
+    end
+
     # # the boundary 2 samples won't won't the provided samples.
     # function Interpolator1DComplex(s_real::Union{Memory{T},Vector{T}}, s_imag::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
     #     size(s_real) == size(s_imag) || error("Size mismatch between the real and imaginary sample matrices.")
@@ -159,6 +170,20 @@ struct Interpolator2DComplex{T<:AbstractFloat} <: AbstractInterpolator2D
     x1_fin::T
     x2_start::T
     x2_fin::T
+
+    # deepcopy
+    function Interpolator2DComplex(A::Interpolator2DComplex{T}) where {T<:AbstractFloat}
+        return new{T}(
+            copy(A.real_coeffs),
+            copy(A.imag_coeffs),
+            IntervalConversion(A.x1_query_cache.a, A.x1_query_cache.d_div_bma),
+            IntervalConversion(A.x2_query_cache.a, A.x2_query_cache.d_div_bma),
+            A.x1_start,
+            A.x1_fin,
+            A.x2_start,
+            A.x2_fin,
+        )
+    end
 
     # # no padding. The bounary two samples will not patch the provided samples.
     # function Interpolator2DComplex(S_real::Matrix{T}, S_imag::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat

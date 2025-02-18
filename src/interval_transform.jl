@@ -17,7 +17,7 @@ end
     to_std_interval(x::T, a::T, b::T, d::Int) where T <: AbstractFloat
 
 converts x ∈ [a,b] to u ∈ [0,d].
-If `N` is the number of samples, then `d` should be 
+If `N` is the number of samples, then `d` should be
 """
 function to_std_interval(x::T, a::T, b::T, d::Int) where T <: AbstractFloat
 
@@ -35,7 +35,7 @@ end
     from_std_interval(x::T, a::T, b::T, d::Int) where T <: AbstractFloat
 
 converts x ∈ [a,b] to u ∈ [0,d].
-If `N` is the number of samples, then `d` should be 
+If `N` is the number of samples, then `d` should be
 """
 function from_std_interval(u::T, a::T, b::T, d::Int) where T <: AbstractFloat
 
