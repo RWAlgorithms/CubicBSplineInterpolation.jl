@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright © 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
+# Copyright © 2025 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
 
 PLT.close("all")
 
@@ -18,8 +18,8 @@ dq_tq_ND_1 = [ FiniteDiff.finite_difference_gradient(hr, [x1; x2_fixed])[1] for 
 dq_tq_2 = [ ITP.query2D_derivative1(x1_fixed, x2, citp)[2] for x2 in mq2 ]
 dq_tq_ND_2 = [ FiniteDiff.finite_difference_gradient(hr, [x1_fixed; x2])[2] for x2 in mq2 ]
 
-h1 = xx->hr([xx; x2_fixed])
-h2 = xx->hr([x1_fixed; xx])
+h1 = xx -> hr([xx; x2_fixed])
+h2 = xx -> hr([x1_fixed; xx])
 
 PLT.figure(fig_num)
 fig_num += 1
@@ -58,8 +58,8 @@ dq_tq_ND_1 = [ FiniteDiff.finite_difference_gradient(hi, [x1; x2_fixed])[1] for 
 dq_tq_2 = [ ITP.query2D_derivative1(x1_fixed, x2, citp)[4] for x2 in mq2 ]
 dq_tq_ND_2 = [ FiniteDiff.finite_difference_gradient(hi, [x1_fixed; x2])[2] for x2 in mq2 ]
 
-h1 = xx->hi([xx; x2_fixed])
-h2 = xx->hi([x1_fixed; xx])
+h1 = xx -> hi([xx; x2_fixed])
+h2 = xx -> hi([x1_fixed; xx])
 
 PLT.figure(fig_num)
 fig_num += 1

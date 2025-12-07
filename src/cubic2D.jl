@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
 
-
-
 # pre-allocated version
-struct FitBuffer2D{T<:AbstractFloat}
+struct FitBuffer2D{T <: AbstractFloat}
 
     S1::Matrix{T} # intermediate coefficient matris.
     #mat_view1::ST # for filtering in the x1 (row) direction.
@@ -13,7 +11,7 @@ struct FitBuffer2D{T<:AbstractFloat}
     buf_x1::FitBuffer1D{T}
     buf_x2::FitBuffer1D{T}
 
-    function FitBuffer2D(::Type{T}, sz::Tuple{Int,Int}; N_padding::Tuple{Int,Int}=(10, 10)) where {T<:AbstractFloat}
+    function FitBuffer2D(::Type{T}, sz::Tuple{Int, Int}; N_padding::Tuple{Int, Int} = (10, 10)) where {T <: AbstractFloat}
 
         Np1, Np2 = N_padding
         Np1 >= 5 || error("All entries of N_padding must be larger or equal to 5. Two for the query system used in this library, three for transition to constant extrapolation.")
@@ -26,8 +24,8 @@ struct FitBuffer2D{T<:AbstractFloat}
         S1 = zeros(T, N1 + 2 * Np1, N2)
         return new{T}(
             S1,
-            FitBuffer1D(T, N1; N_padding=Np1),
-            FitBuffer1D(T, N2; N_padding=Np2),
+            FitBuffer1D(T, N1; N_padding = Np1),
+            FitBuffer1D(T, N2; N_padding = Np2),
         )
     end
 end
@@ -38,7 +36,7 @@ function get_coeffs_size(s::FitBuffer2D)
     return (M1, M2)
 end
 
-struct Interpolator2D{T<:AbstractFloat} <: AbstractInterpolator2D
+struct Interpolator2D{T <: AbstractFloat} <: AbstractInterpolator2D
     coeffs::Matrix{T}
     x1_query_cache::IntervalConversion{T}
     x2_query_cache::IntervalConversion{T}
@@ -49,7 +47,7 @@ struct Interpolator2D{T<:AbstractFloat} <: AbstractInterpolator2D
     x2_fin::T
 
     # deepcopy
-    function Interpolator2D(A::Interpolator2D{T}) where {T<:AbstractFloat}
+    function Interpolator2D(A::Interpolator2D{T}) where {T <: AbstractFloat}
         return new{T}(
             copy(A.coeffs),
             IntervalConversion(A.x1_query_cache.a, A.x1_query_cache.d_div_bma),
@@ -79,16 +77,16 @@ struct Interpolator2D{T<:AbstractFloat} <: AbstractInterpolator2D
     # has padding.
     # mutates buf.
     function Interpolator2D(
-        padding_option::PaddingOption,
-        extrapolation_option::ExtrapolationOption,
-        buf::FitBuffer2D,
-        S::Matrix{T},
-        x1_start::T,
-        x1_fin::T,
-        x2_start::T,
-        x2_fin::T;
-        ϵ::T=eps(T) * 2,
-    ) where {T<:AbstractFloat}
+            padding_option::PaddingOption,
+            extrapolation_option::ExtrapolationOption,
+            buf::FitBuffer2D,
+            S::Matrix{T},
+            x1_start::T,
+            x1_fin::T,
+            x2_start::T,
+            x2_fin::T;
+            ϵ::T = eps(T) * 2,
+        ) where {T <: AbstractFloat}
 
         A1, xs1 = create_query_cache(x1_start, x1_fin, size(S, 1), buf.buf_x1.N_padding)
         A2, xs2 = create_query_cache(x2_start, x2_fin, size(S, 2), buf.buf_x2.N_padding)
@@ -100,20 +98,20 @@ struct Interpolator2D{T<:AbstractFloat} <: AbstractInterpolator2D
     end
 
     # has padding. Default to LinearPadding()
-    function Interpolator2D(buf::FitBuffer2D, S::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T=eps(T) * 2) where {T<:AbstractFloat}
-        return Interpolator2D(LinearPadding(), ConstantExtrapolation(), buf, S, x1_start, x1_fin, x2_start, x2_fin; ϵ=ϵ)
+    function Interpolator2D(buf::FitBuffer2D, S::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T) * 2) where {T <: AbstractFloat}
+        return Interpolator2D(LinearPadding(), ConstantExtrapolation(), buf, S, x1_start, x1_fin, x2_start, x2_fin; ϵ = ϵ)
     end
 end
 
-# option is for dispatch. itp mutates, is output. Mutates buf, 
+# option is for dispatch. itp mutates, is output. Mutates buf,
 function update_itp!(
-    padding_option::PaddingOption,
-    extrapolation_option::ExtrapolationOption,
-    itp::Interpolator2D,
-    buf::FitBuffer2D,
-    S::Matrix{T};
-    ϵ::T=eps(T) * 2,
-) where {T<:AbstractFloat}
+        padding_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        itp::Interpolator2D,
+        buf::FitBuffer2D,
+        S::Matrix{T};
+        ϵ::T = eps(T) * 2,
+    ) where {T <: AbstractFloat}
 
     size(itp.coeffs) == get_coeffs_size(buf) || error("Size mismatch.")
     size(S, 2) == size(buf.S1, 2) || error("Size mismatch.")
@@ -127,23 +125,23 @@ function update_itp!(
 end
 
 # convenince
-function update_itp!(itp::Interpolator2D, buf::FitBuffer2D, S::Matrix{T}; ϵ::T=eps(T) * 2) where {T<:AbstractFloat}
-    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, S; ϵ=ϵ)
+function update_itp!(itp::Interpolator2D, buf::FitBuffer2D, S::Matrix{T}; ϵ::T = eps(T) * 2) where {T <: AbstractFloat}
+    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, S; ϵ = ϵ)
 end
 
 
 # X, buf1, buf2 mutates, are buffers.
 # Y mutates, is output.
 function _get_coeffs!(
-    pading_option::PaddingOption,
-    extrapolation_option::ExtrapolationOption,
-    Y::AbstractMatrix{T},
-    buf::FitBuffer2D,
-    S::AbstractMatrix{T},
-    xs1::LinRange,
-    xs2::LinRange,
-    ϵ::T,
-) where {T<:AbstractFloat}
+        pading_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        Y::AbstractMatrix{T},
+        buf::FitBuffer2D,
+        S::AbstractMatrix{T},
+        xs1::LinRange,
+        xs2::LinRange,
+        ϵ::T,
+    ) where {T <: AbstractFloat}
 
     size(Y, 1) == size(buf.S1, 1) || error("Size mismatch.")
     size(S, 2) == size(buf.S1, 2) || error("Size mismatch.")
@@ -162,7 +160,7 @@ function _get_coeffs!(
 end
 
 
-function query2D(x1_in::T, x2_in::T, itp::Interpolator2D{T}) where {T<:AbstractFloat}
+function query2D(x1_in::T, x2_in::T, itp::Interpolator2D{T}) where {T <: AbstractFloat}
     C, A1, A2 = itp.coeffs, itp.x1_query_cache, itp.x2_query_cache
 
     # # Transform clamp the input coordinates.
@@ -207,29 +205,28 @@ function query2D(x1_in::T, x2_in::T, itp::Interpolator2D{T}) where {T<:AbstractF
     spline1_3 = eval_cubic_spline_in12(x1 - k1_lb - 3) # x1 - (k1_lb + 3)
 
     # The 4x4 = 16 terms.
-    out00 = C[begin+k1_lb, begin+k2_lb] * spline1_0 * spline2_0
-    out10 = C[begin+k1_lb+1, begin+k2_lb] * spline1_1 * spline2_0
-    out20 = C[begin+k1_lb+2, begin+k2_lb] * spline1_2 * spline2_0
-    out30 = C[begin+k1_lb+3, begin+k2_lb] * spline1_3 * spline2_0
+    out00 = C[begin + k1_lb, begin + k2_lb] * spline1_0 * spline2_0
+    out10 = C[begin + k1_lb + 1, begin + k2_lb] * spline1_1 * spline2_0
+    out20 = C[begin + k1_lb + 2, begin + k2_lb] * spline1_2 * spline2_0
+    out30 = C[begin + k1_lb + 3, begin + k2_lb] * spline1_3 * spline2_0
 
-    out01 = C[begin+k1_lb, begin+k2_lb+1] * spline1_0 * spline2_1
-    out11 = C[begin+k1_lb+1, begin+k2_lb+1] * spline1_1 * spline2_1
-    out21 = C[begin+k1_lb+2, begin+k2_lb+1] * spline1_2 * spline2_1
-    out31 = C[begin+k1_lb+3, begin+k2_lb+1] * spline1_3 * spline2_1
+    out01 = C[begin + k1_lb, begin + k2_lb + 1] * spline1_0 * spline2_1
+    out11 = C[begin + k1_lb + 1, begin + k2_lb + 1] * spline1_1 * spline2_1
+    out21 = C[begin + k1_lb + 2, begin + k2_lb + 1] * spline1_2 * spline2_1
+    out31 = C[begin + k1_lb + 3, begin + k2_lb + 1] * spline1_3 * spline2_1
 
-    out02 = C[begin+k1_lb, begin+k2_lb+2] * spline1_0 * spline2_2
-    out12 = C[begin+k1_lb+1, begin+k2_lb+2] * spline1_1 * spline2_2
-    out22 = C[begin+k1_lb+2, begin+k2_lb+2] * spline1_2 * spline2_2
-    out32 = C[begin+k1_lb+3, begin+k2_lb+2] * spline1_3 * spline2_2
+    out02 = C[begin + k1_lb, begin + k2_lb + 2] * spline1_0 * spline2_2
+    out12 = C[begin + k1_lb + 1, begin + k2_lb + 2] * spline1_1 * spline2_2
+    out22 = C[begin + k1_lb + 2, begin + k2_lb + 2] * spline1_2 * spline2_2
+    out32 = C[begin + k1_lb + 3, begin + k2_lb + 2] * spline1_3 * spline2_2
 
-    out03 = C[begin+k1_lb, begin+k2_lb+3] * spline1_0 * spline2_3
-    out13 = C[begin+k1_lb+1, begin+k2_lb+3] * spline1_1 * spline2_3
-    out23 = C[begin+k1_lb+2, begin+k2_lb+3] * spline1_2 * spline2_3
-    out33 = C[begin+k1_lb+3, begin+k2_lb+3] * spline1_3 * spline2_3
+    out03 = C[begin + k1_lb, begin + k2_lb + 3] * spline1_0 * spline2_3
+    out13 = C[begin + k1_lb + 1, begin + k2_lb + 3] * spline1_1 * spline2_3
+    out23 = C[begin + k1_lb + 2, begin + k2_lb + 3] * spline1_2 * spline2_3
+    out33 = C[begin + k1_lb + 3, begin + k2_lb + 3] * spline1_3 * spline2_3
 
     return out00 + out10 + out20 + out30 +
-           out01 + out11 + out21 + out31 +
-           out02 + out12 + out22 + out32 +
-           out03 + out13 + out23 + out33
+        out01 + out11 + out21 + out31 +
+        out02 + out12 + out22 + out32 +
+        out03 + out13 + out23 + out33
 end
-

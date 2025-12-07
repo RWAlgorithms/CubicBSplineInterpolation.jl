@@ -4,7 +4,7 @@
 
 # # Complex-valued 1D
 
-struct Interpolator1DComplex{T<:AbstractFloat} <: AbstractInterpolator1D
+struct Interpolator1DComplex{T <: AbstractFloat} <: AbstractInterpolator1D
 
     real_coeffs::Memory{T}
     imag_coeffs::Memory{T}
@@ -14,7 +14,7 @@ struct Interpolator1DComplex{T<:AbstractFloat} <: AbstractInterpolator1D
     x_fin::T
 
     # deepcopy
-    function Interpolator1DComplex(A::Interpolator1DComplex{T}) where {T<:AbstractFloat}
+    function Interpolator1DComplex(A::Interpolator1DComplex{T}) where {T <: AbstractFloat}
         return new{T}(
             copy(A.real_coeffs),
             copy(A.imag_coeffs),
@@ -24,35 +24,17 @@ struct Interpolator1DComplex{T<:AbstractFloat} <: AbstractInterpolator1D
         )
     end
 
-    # # the boundary 2 samples won't won't the provided samples.
-    # function Interpolator1DComplex(s_real::Union{Memory{T},Vector{T}}, s_imag::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T)*2) where T <: AbstractFloat
-    #     size(s_real) == size(s_imag) || error("Size mismatch between the real and imaginary sample matrices.")
-
-    #     A = IntervalConversion(x_start, x_fin, length(s_real))
-
-    #     c_real = Memory{T}(undef, length(s_real))
-    #     _get_coeffs!(c_real, s_real, ϵ)
-
-    #     c_imag = Memory{T}(undef, length(s_imag))
-    #     _get_coeffs!(c_imag, s_imag, ϵ)
-
-    #     # sanity check. The following should pass since S_real and S_imag have the same size.
-    #     # Keep it here to explicitly define invariants on real_coeffs and image_coeffs.
-    #     size(c_real) == size(c_imag) || error("Size mismatch for coefficients. Please file bug report.")
-    #     return new{T}(c_real, c_imag, A, x_start, x_fin)
-    # end
-
     # Mutates buf, option is for dispatch.
     function Interpolator1DComplex(
-        padding_option::PaddingOption,
-        extrapolation_option::ExtrapolationOption,
-        buf::FitBuffer1D,
-        s_real::Union{Memory{T},Vector{T}},
-        s_imag::Union{Memory{T},Vector{T}},
-        x_start::T,
-        x_fin::T;
-        ϵ::T=eps(T) * 2,
-    ) where {T<:AbstractFloat}
+            padding_option::PaddingOption,
+            extrapolation_option::ExtrapolationOption,
+            buf::FitBuffer1D,
+            s_real::Union{Memory{T}, Vector{T}},
+            s_imag::Union{Memory{T}, Vector{T}},
+            x_start::T,
+            x_fin::T;
+            ϵ::T = eps(T) * 2,
+        ) where {T <: AbstractFloat}
 
         size(s_real) == size(s_imag) || error("Size mismatch between the real and imaginary sample matrices.")
 
@@ -73,21 +55,21 @@ struct Interpolator1DComplex{T<:AbstractFloat} <: AbstractInterpolator1D
     end
 
     # convinence constructor. Mutates buf
-    function Interpolator1DComplex(buf::FitBuffer1D, s_real::Union{Memory{T},Vector{T}}, s_imag::Union{Memory{T},Vector{T}}, x_start::T, x_fin::T; ϵ::T=eps(T) * 2) where {T<:AbstractFloat}
-        return Interpolator1DComplex(LinearPadding(), ConstantExtrapolation(), buf, s_real, s_imag, x_start, x_fin; ϵ=ϵ)
+    function Interpolator1DComplex(buf::FitBuffer1D, s_real::Union{Memory{T}, Vector{T}}, s_imag::Union{Memory{T}, Vector{T}}, x_start::T, x_fin::T; ϵ::T = eps(T) * 2) where {T <: AbstractFloat}
+        return Interpolator1DComplex(LinearPadding(), ConstantExtrapolation(), buf, s_real, s_imag, x_start, x_fin; ϵ = ϵ)
     end
 end
 
 # Mutates buf, option is for dispatch. itp mutates, is output.
 function update_itp!(
-    padding_option::PaddingOption,
-    extrapolation_option::ExtrapolationOption,
-    itp::Interpolator1DComplex,
-    buf::FitBuffer1D,
-    s_real::Union{Memory{T},Vector{T}},
-    s_imag::Union{Memory{T},Vector{T}};
-    ϵ::T=eps(T) * 2,
-) where {T<:AbstractFloat}
+        padding_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        itp::Interpolator1DComplex,
+        buf::FitBuffer1D,
+        s_real::Union{Memory{T}, Vector{T}},
+        s_imag::Union{Memory{T}, Vector{T}};
+        ϵ::T = eps(T) * 2,
+    ) where {T <: AbstractFloat}
 
     length(s_real) == length(s_imag) == get_data_length(buf) || error("Length mismatch.")
 
@@ -98,12 +80,12 @@ function update_itp!(
 end
 
 # convenince
-function update_itp!(itp::Interpolator1DComplex, buf::FitBuffer1D, s_real::Union{Memory{T},Vector{T}}, s_imag::Union{Memory{T},Vector{T}}; ϵ::T=eps(T) * 2) where {T<:AbstractFloat}
-    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, s_real, s_imag; ϵ=ϵ)
+function update_itp!(itp::Interpolator1DComplex, buf::FitBuffer1D, s_real::Union{Memory{T}, Vector{T}}, s_imag::Union{Memory{T}, Vector{T}}; ϵ::T = eps(T) * 2) where {T <: AbstractFloat}
+    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, s_real, s_imag; ϵ = ϵ)
 end
 
 
-function query1D(x_in::T, itp::Interpolator1DComplex{T}) where {T<:AbstractFloat}
+function query1D(x_in::T, itp::Interpolator1DComplex{T}) where {T <: AbstractFloat}
 
     cr, ci, A = itp.real_coeffs, itp.imag_coeffs, itp.query_cache
 
@@ -139,18 +121,18 @@ function query1D(x_in::T, itp::Interpolator1DComplex{T}) where {T<:AbstractFloat
     #### end copy from the other query1D.
 
     # real.
-    out_r_0 = cr[begin+k_lb] * spline_0
-    out_r_1 = cr[begin+k_lb+1] * spline_1
-    out_r_2 = cr[begin+k_lb+2] * spline_2
-    out_r_3 = cr[begin+k_lb+3] * spline_3
+    out_r_0 = cr[begin + k_lb] * spline_0
+    out_r_1 = cr[begin + k_lb + 1] * spline_1
+    out_r_2 = cr[begin + k_lb + 2] * spline_2
+    out_r_3 = cr[begin + k_lb + 3] * spline_3
 
     out_real = out_r_0 + out_r_1 + out_r_2 + out_r_3
 
     # imaginary.
-    out_i_0 = ci[begin+k_lb] * spline_0
-    out_i_1 = ci[begin+k_lb+1] * spline_1
-    out_i_2 = ci[begin+k_lb+2] * spline_2
-    out_i_3 = ci[begin+k_lb+3] * spline_3
+    out_i_0 = ci[begin + k_lb] * spline_0
+    out_i_1 = ci[begin + k_lb + 1] * spline_1
+    out_i_2 = ci[begin + k_lb + 2] * spline_2
+    out_i_3 = ci[begin + k_lb + 3] * spline_3
 
     out_imag = out_i_0 + out_i_1 + out_i_2 + out_i_3
 
@@ -160,7 +142,7 @@ end
 
 #### 2D
 
-struct Interpolator2DComplex{T<:AbstractFloat} <: AbstractInterpolator2D
+struct Interpolator2DComplex{T <: AbstractFloat} <: AbstractInterpolator2D
     real_coeffs::Matrix{T}
     imag_coeffs::Matrix{T}
     x1_query_cache::IntervalConversion{T}
@@ -172,7 +154,7 @@ struct Interpolator2DComplex{T<:AbstractFloat} <: AbstractInterpolator2D
     x2_fin::T
 
     # deepcopy
-    function Interpolator2DComplex(A::Interpolator2DComplex{T}) where {T<:AbstractFloat}
+    function Interpolator2DComplex(A::Interpolator2DComplex{T}) where {T <: AbstractFloat}
         return new{T}(
             copy(A.real_coeffs),
             copy(A.imag_coeffs),
@@ -208,17 +190,17 @@ struct Interpolator2DComplex{T<:AbstractFloat} <: AbstractInterpolator2D
     # has padding.
     # mutates buf.
     function Interpolator2DComplex(
-        padding_option::PaddingOption,
-        extrapolation_option::ExtrapolationOption,
-        buf::FitBuffer2D,
-        S_real::Matrix{T},
-        S_imag::Matrix{T},
-        x1_start::T,
-        x1_fin::T,
-        x2_start::T,
-        x2_fin::T;
-        ϵ::T=eps(T) * 2,
-    ) where {T<:AbstractFloat}
+            padding_option::PaddingOption,
+            extrapolation_option::ExtrapolationOption,
+            buf::FitBuffer2D,
+            S_real::Matrix{T},
+            S_imag::Matrix{T},
+            x1_start::T,
+            x1_fin::T,
+            x2_start::T,
+            x2_fin::T;
+            ϵ::T = eps(T) * 2,
+        ) where {T <: AbstractFloat}
 
         size(S_real) == size(S_imag) || error("Size mismatch between the real and imaginary sample matrices.")
 
@@ -235,21 +217,21 @@ struct Interpolator2DComplex{T<:AbstractFloat} <: AbstractInterpolator2D
     end
 
     # has padding. Default to LinearPadding()
-    function Interpolator2DComplex(buf::FitBuffer2D, S_real::Matrix{T}, S_imag::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T=eps(T) * 2) where {T<:AbstractFloat}
-        return Interpolator2DComplex(LinearPadding(), ConstantExtrapolation(), buf, S_real, S_imag, x1_start, x1_fin, x2_start, x2_fin; ϵ=ϵ)
+    function Interpolator2DComplex(buf::FitBuffer2D, S_real::Matrix{T}, S_imag::Matrix{T}, x1_start::T, x1_fin::T, x2_start::T, x2_fin::T; ϵ::T = eps(T) * 2) where {T <: AbstractFloat}
+        return Interpolator2DComplex(LinearPadding(), ConstantExtrapolation(), buf, S_real, S_imag, x1_start, x1_fin, x2_start, x2_fin; ϵ = ϵ)
     end
 end
 
 # Mutates buf, option is for dispatch. itp mutates, is output.
 function update_itp!(
-    padding_option::PaddingOption,
-    extrapolation_option::ExtrapolationOption,
-    itp::Interpolator2DComplex,
-    buf::FitBuffer2D,
-    S_real::Matrix{T},
-    S_imag::Matrix{T};
-    ϵ::T=eps(T) * 2,
-) where {T<:AbstractFloat}
+        padding_option::PaddingOption,
+        extrapolation_option::ExtrapolationOption,
+        itp::Interpolator2DComplex,
+        buf::FitBuffer2D,
+        S_real::Matrix{T},
+        S_imag::Matrix{T};
+        ϵ::T = eps(T) * 2,
+    ) where {T <: AbstractFloat}
 
     size(S_real) == size(S_imag) || error("Size mismatch between the real and imaginary sample matrices.")
     size(itp.real_coeffs) == size(itp.imag_coeffs) == get_coeffs_size(buf) || error("Size mismatch.")
@@ -265,11 +247,11 @@ function update_itp!(
 end
 
 # convenince
-function update_itp!(itp::Interpolator2DComplex, buf::FitBuffer2D, S_real::Matrix{T}, S_imag::Matrix{T}; ϵ::T=eps(T) * 2) where {T<:AbstractFloat}
-    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, S_real, S_imag; ϵ=ϵ)
+function update_itp!(itp::Interpolator2DComplex, buf::FitBuffer2D, S_real::Matrix{T}, S_imag::Matrix{T}; ϵ::T = eps(T) * 2) where {T <: AbstractFloat}
+    return update_itp!(LinearPadding(), ConstantExtrapolation(), itp, buf, S_real, S_imag; ϵ = ϵ)
 end
 
-function query2D(x1_in::T, x2_in::T, itp::Interpolator2DComplex{T}) where {T<:AbstractFloat}
+function query2D(x1_in::T, x2_in::T, itp::Interpolator2DComplex{T}) where {T <: AbstractFloat}
 
     Cr, Ci, A1, A2 = itp.real_coeffs, itp.imag_coeffs, itp.x1_query_cache, itp.x2_query_cache
 
@@ -340,56 +322,56 @@ function query2D(x1_in::T, x2_in::T, itp::Interpolator2DComplex{T}) where {T<:Ab
     sp_33 = spline1_3 * spline2_3
 
     # The 4x4 = 16 terms.
-    out_r_00 = Cr[begin+k1_lb, begin+k2_lb] * sp_00
-    out_r_10 = Cr[begin+k1_lb+1, begin+k2_lb] * sp_10
-    out_r_20 = Cr[begin+k1_lb+2, begin+k2_lb] * sp_20
-    out_r_30 = Cr[begin+k1_lb+3, begin+k2_lb] * sp_30
+    out_r_00 = Cr[begin + k1_lb, begin + k2_lb] * sp_00
+    out_r_10 = Cr[begin + k1_lb + 1, begin + k2_lb] * sp_10
+    out_r_20 = Cr[begin + k1_lb + 2, begin + k2_lb] * sp_20
+    out_r_30 = Cr[begin + k1_lb + 3, begin + k2_lb] * sp_30
 
-    out_r_01 = Cr[begin+k1_lb, begin+k2_lb+1] * sp_01
-    out_r_11 = Cr[begin+k1_lb+1, begin+k2_lb+1] * sp_11
-    out_r_21 = Cr[begin+k1_lb+2, begin+k2_lb+1] * sp_21
-    out_r_31 = Cr[begin+k1_lb+3, begin+k2_lb+1] * sp_31
+    out_r_01 = Cr[begin + k1_lb, begin + k2_lb + 1] * sp_01
+    out_r_11 = Cr[begin + k1_lb + 1, begin + k2_lb + 1] * sp_11
+    out_r_21 = Cr[begin + k1_lb + 2, begin + k2_lb + 1] * sp_21
+    out_r_31 = Cr[begin + k1_lb + 3, begin + k2_lb + 1] * sp_31
 
-    out_r_02 = Cr[begin+k1_lb, begin+k2_lb+2] * sp_02
-    out_r_12 = Cr[begin+k1_lb+1, begin+k2_lb+2] * sp_12
-    out_r_22 = Cr[begin+k1_lb+2, begin+k2_lb+2] * sp_22
-    out_r_32 = Cr[begin+k1_lb+3, begin+k2_lb+2] * sp_32
+    out_r_02 = Cr[begin + k1_lb, begin + k2_lb + 2] * sp_02
+    out_r_12 = Cr[begin + k1_lb + 1, begin + k2_lb + 2] * sp_12
+    out_r_22 = Cr[begin + k1_lb + 2, begin + k2_lb + 2] * sp_22
+    out_r_32 = Cr[begin + k1_lb + 3, begin + k2_lb + 2] * sp_32
 
-    out_r_03 = Cr[begin+k1_lb, begin+k2_lb+3] * sp_03
-    out_r_13 = Cr[begin+k1_lb+1, begin+k2_lb+3] * sp_13
-    out_r_23 = Cr[begin+k1_lb+2, begin+k2_lb+3] * sp_23
-    out_r_33 = Cr[begin+k1_lb+3, begin+k2_lb+3] * sp_33
+    out_r_03 = Cr[begin + k1_lb, begin + k2_lb + 3] * sp_03
+    out_r_13 = Cr[begin + k1_lb + 1, begin + k2_lb + 3] * sp_13
+    out_r_23 = Cr[begin + k1_lb + 2, begin + k2_lb + 3] * sp_23
+    out_r_33 = Cr[begin + k1_lb + 3, begin + k2_lb + 3] * sp_33
 
     out_real = out_r_00 + out_r_10 + out_r_20 + out_r_30 +
-               out_r_01 + out_r_11 + out_r_21 + out_r_31 +
-               out_r_02 + out_r_12 + out_r_22 + out_r_32 +
-               out_r_03 + out_r_13 + out_r_23 + out_r_33
+        out_r_01 + out_r_11 + out_r_21 + out_r_31 +
+        out_r_02 + out_r_12 + out_r_22 + out_r_32 +
+        out_r_03 + out_r_13 + out_r_23 + out_r_33
 
     #
-    out_i_00 = Ci[begin+k1_lb, begin+k2_lb] * sp_00
-    out_i_10 = Ci[begin+k1_lb+1, begin+k2_lb] * sp_10
-    out_i_20 = Ci[begin+k1_lb+2, begin+k2_lb] * sp_20
-    out_i_30 = Ci[begin+k1_lb+3, begin+k2_lb] * sp_30
+    out_i_00 = Ci[begin + k1_lb, begin + k2_lb] * sp_00
+    out_i_10 = Ci[begin + k1_lb + 1, begin + k2_lb] * sp_10
+    out_i_20 = Ci[begin + k1_lb + 2, begin + k2_lb] * sp_20
+    out_i_30 = Ci[begin + k1_lb + 3, begin + k2_lb] * sp_30
 
-    out_i_01 = Ci[begin+k1_lb, begin+k2_lb+1] * sp_01
-    out_i_11 = Ci[begin+k1_lb+1, begin+k2_lb+1] * sp_11
-    out_i_21 = Ci[begin+k1_lb+2, begin+k2_lb+1] * sp_21
-    out_i_31 = Ci[begin+k1_lb+3, begin+k2_lb+1] * sp_31
+    out_i_01 = Ci[begin + k1_lb, begin + k2_lb + 1] * sp_01
+    out_i_11 = Ci[begin + k1_lb + 1, begin + k2_lb + 1] * sp_11
+    out_i_21 = Ci[begin + k1_lb + 2, begin + k2_lb + 1] * sp_21
+    out_i_31 = Ci[begin + k1_lb + 3, begin + k2_lb + 1] * sp_31
 
-    out_i_02 = Ci[begin+k1_lb, begin+k2_lb+2] * sp_02
-    out_i_12 = Ci[begin+k1_lb+1, begin+k2_lb+2] * sp_12
-    out_i_22 = Ci[begin+k1_lb+2, begin+k2_lb+2] * sp_22
-    out_i_32 = Ci[begin+k1_lb+3, begin+k2_lb+2] * sp_32
+    out_i_02 = Ci[begin + k1_lb, begin + k2_lb + 2] * sp_02
+    out_i_12 = Ci[begin + k1_lb + 1, begin + k2_lb + 2] * sp_12
+    out_i_22 = Ci[begin + k1_lb + 2, begin + k2_lb + 2] * sp_22
+    out_i_32 = Ci[begin + k1_lb + 3, begin + k2_lb + 2] * sp_32
 
-    out_i_03 = Ci[begin+k1_lb, begin+k2_lb+3] * sp_03
-    out_i_13 = Ci[begin+k1_lb+1, begin+k2_lb+3] * sp_13
-    out_i_23 = Ci[begin+k1_lb+2, begin+k2_lb+3] * sp_23
-    out_i_33 = Ci[begin+k1_lb+3, begin+k2_lb+3] * sp_33
+    out_i_03 = Ci[begin + k1_lb, begin + k2_lb + 3] * sp_03
+    out_i_13 = Ci[begin + k1_lb + 1, begin + k2_lb + 3] * sp_13
+    out_i_23 = Ci[begin + k1_lb + 2, begin + k2_lb + 3] * sp_23
+    out_i_33 = Ci[begin + k1_lb + 3, begin + k2_lb + 3] * sp_33
 
     out_imag = out_i_00 + out_i_10 + out_i_20 + out_i_30 +
-               out_i_01 + out_i_11 + out_i_21 + out_i_31 +
-               out_i_02 + out_i_12 + out_i_22 + out_i_32 +
-               out_i_03 + out_i_13 + out_i_23 + out_i_33
+        out_i_01 + out_i_11 + out_i_21 + out_i_31 +
+        out_i_02 + out_i_12 + out_i_22 + out_i_32 +
+        out_i_03 + out_i_13 + out_i_23 + out_i_33
 
     return Complex(out_real, out_imag)
 end

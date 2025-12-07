@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright © 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
+# Copyright © 2025 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
 
 # This example assumes you have gone through the 1D tutorial, so the padding and extrapolation options are not discussed here.
 
@@ -15,7 +15,7 @@ T = Float32
 # The accuracy tuning parameter for computing the spline filter coefficients. See `ϵ` from Box 2 of  DOI: 10.1109/79.799930. for more details.
 ϵ = eps(T) * 2
 
-# Specify 
+# Specify
 a1 = T(-4.0)
 b1 = T(3.45)
 N1 = 100
@@ -29,7 +29,7 @@ S = [f(x1, x2) for x1 in t_range1, x2 in t_range2]
 
 
 # fit.
-buf = ITP.FitBuffer2D(T, size(S); N_padding=(10, 10))
+buf = ITP.FitBuffer2D(T, size(S); N_padding = (10, 10))
 #itp2D = ITP.Interpolator2D(buf, S, a1, b1, a2, b2; ϵ = ϵ)
 
 # padding_option = ITP.LinearPadding()
@@ -41,16 +41,16 @@ extrapolation_option = ITP.ConstantExtrapolation()
 itp2D = ITP.Interpolator2D(
     padding_option,
     extrapolation_option,
-    buf, S, a1, b1, a2, b2; ϵ=ϵ,
+    buf, S, a1, b1, a2, b2; ϵ = ϵ,
 )
 
 # test update_itp!
 c_back = copy(itp2D.coeffs)
 S_random = randn(Random.Xoshiro(0), T, size(S))
-ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S_random; ϵ=ϵ)
+ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S_random; ϵ = ϵ)
 @assert norm(c_back - itp2D.coeffs) > eps(T) * 10
 
-ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S; ϵ=ϵ)
+ITP.update_itp!(padding_option, extrapolation_option, itp2D, buf, S; ϵ = ϵ)
 @assert norm(c_back - itp2D.coeffs) < eps(T)
 
 # timing
@@ -135,10 +135,10 @@ x2 = tq_range2[432]
 import Interpolations
 
 function setup_itp(
-    A::Matrix{T},
-    A_r,
-    A_λ,
-) where {T<:AbstractFloat}
+        A::Matrix{T},
+        A_r,
+        A_λ,
+    ) where {T <: AbstractFloat}
 
     real_itp = Interpolations.interpolate(A, Interpolations.BSpline(Interpolations.Cubic(Interpolations.Line(Interpolations.OnGrid()))))
     #real_itp = Interpolations.interpolate(real.(A), Interpolations.BSpline(Interpolations.Quadratic(Interpolations.Line(Interpolations.OnGrid()))))
@@ -184,7 +184,7 @@ t_range2 = LinRange(T(-1.23), T(4.56), 783)
 Sr = [f_real(x1, x2) for x1 in t_range1, x2 in t_range2]
 Si = [f_imag(x1, x2) for x1 in t_range1, x2 in t_range2]
 
-cbuf = ITP.FitBuffer2D(T, size(Sr); N_padding=(8, 7))
+cbuf = ITP.FitBuffer2D(T, size(Sr); N_padding = (8, 7))
 citp = ITP.Interpolator2DComplex(cbuf, Sr, Si, first(t_range1), last(t_range1), first(t_range2), last(t_range2))
 
 # test update_itp!
@@ -192,11 +192,11 @@ cr_back = copy(citp.real_coeffs)
 ci_back = copy(citp.imag_coeffs)
 Sr_random = randn(Random.Xoshiro(0), T, size(Sr))
 Si_random = randn(Random.Xoshiro(0), T, size(Si))
-ITP.update_itp!(citp, cbuf, Sr_random, Si_random; ϵ=ϵ)
+ITP.update_itp!(citp, cbuf, Sr_random, Si_random; ϵ = ϵ)
 @assert norm(cr_back - citp.real_coeffs) > eps(T) * 10
 @assert norm(ci_back - citp.imag_coeffs) > eps(T) * 10
 
-ITP.update_itp!(citp, cbuf, Sr, Si; ϵ=ϵ)
+ITP.update_itp!(citp, cbuf, Sr, Si; ϵ = ϵ)
 @assert norm(cr_back - citp.real_coeffs) < eps(T)
 @assert norm(ci_back - citp.imag_coeffs) < eps(T)
 
@@ -213,11 +213,11 @@ Sq = [f(x1, x2) for x1 in tq_range1, x2 in tq_range2]
 # Compare with Interpolations
 
 function setup_itp(
-    S_real::Matrix{T},
-    S_imag::Matrix{T},
-    A_r,
-    A_λ,
-) where {T<:AbstractFloat}
+        S_real::Matrix{T},
+        S_imag::Matrix{T},
+        A_r,
+        A_λ,
+    ) where {T <: AbstractFloat}
 
     real_itp = Interpolations.interpolate(S_real, Interpolations.BSpline(Interpolations.Cubic(Interpolations.Line(Interpolations.OnGrid()))))
     real_sitp = Interpolations.scale(real_itp, A_r, A_λ)

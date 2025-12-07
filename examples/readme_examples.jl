@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright © 2025 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
+
 # using Revise
 
 println("1D, real-valued")
@@ -6,7 +9,7 @@ using LinearAlgebra
 
 T = Float64
 
-ϵ = T(1e-8) # numerical tolerance for the digital filtering algorithm.
+ϵ = T(1.0e-8) # numerical tolerance for the digital filtering algorithm.
 
 # interpolation interval
 N = 1000
@@ -19,8 +22,8 @@ f = xx -> exp(-(1 / 17) * (xx / 3)^2)
 s = f.(t_range) # generate interpolation samples.
 
 N_padding = 5 # This should be equal and larger than 5.
-buf = ITP.FitBuffer1D(T, length(s); N_padding=N_padding)
-itp1D = ITP.Interpolator1D(buf, s, a, b; ϵ=ϵ) # allocates itp1D.coeffs.
+buf = ITP.FitBuffer1D(T, length(s); N_padding = N_padding)
+itp1D = ITP.Interpolator1D(buf, s, a, b; ϵ = ϵ) # allocates itp1D.coeffs.
 
 # residual error, should be near zero if N_padding >= 2.
 s_rec = collect(ITP.query1D(u, itp1D) for u in t_range)
@@ -35,14 +38,14 @@ results = collect(ITP.query1D(u, itp1D) for u in tq_range)
 # the extrapolated result should be clamped to the border interpolation samples.
 
 # sanity check.
-ITP.update_itp!(itp1D, buf, s; ϵ=ϵ) # fits and overwrites existing coefficients.
+ITP.update_itp!(itp1D, buf, s; ϵ = ϵ) # fits and overwrites existing coefficients.
 results2 = collect(ITP.query1D(u, itp1D) for u in tq_range)
 @show norm(results - results2) # should be zero.
 
 # Allocation benchmark for allocations.
 using BenchmarkTools
-@btime ITP.Interpolator1D($buf, $s, $a, $b; ϵ=$ϵ) # allocates. Used only to generate `itp1D`.
-@btime ITP.update_itp!($itp1D, $buf, $s; ϵ=$ϵ) # Does not allocate.
+@btime ITP.Interpolator1D($buf, $s, $a, $b; ϵ = $ϵ) # allocates. Used only to generate `itp1D`.
+@btime ITP.update_itp!($itp1D, $buf, $s; ϵ = $ϵ) # Does not allocate.
 
 println()
 println("1D complex-valued")
@@ -51,7 +54,7 @@ using LinearAlgebra
 
 T = Float64
 
-ϵ = T(1e-8) # numerical tolerance for the digital filtering algorithm.
+ϵ = T(1.0e-8) # numerical tolerance for the digital filtering algorithm.
 
 # generate data.
 f_real = (xx) -> sinc((xx)^2)
@@ -63,8 +66,8 @@ Si = [f_imag(x1) for x1 in t_range]
 
 # interpolate.
 cNp = 5
-cbuf = ITP.FitBuffer1D(T, length(Sr); N_padding=cNp)
-citp = ITP.Interpolator1DComplex(cbuf, Sr, Si, first(t_range), last(t_range); ϵ=ϵ)
+cbuf = ITP.FitBuffer1D(T, length(Sr); N_padding = cNp)
+citp = ITP.Interpolator1DComplex(cbuf, Sr, Si, first(t_range), last(t_range); ϵ = ϵ)
 
 # fit residual error. Should be near zero.
 qc = xx -> ITP.query1D(xx, citp)
@@ -79,15 +82,15 @@ results = [ITP.query1D(x1, citp) for x1 in tq_range]
 
 
 # sanity check.
-ITP.update_itp!(citp, cbuf, Sr, Si; ϵ=ϵ) # fits and overwrites existing coefficients.
+ITP.update_itp!(citp, cbuf, Sr, Si; ϵ = ϵ) # fits and overwrites existing coefficients.
 results2 = collect(ITP.query1D(u, citp) for u in tq_range)
 @show norm(results - results2) # should be zero.
 
 # Allocation benchmark for allocations.
 using BenchmarkTools
 a, b = first(t_range), last(t_range)
-@btime ITP.Interpolator1DComplex($cbuf, $Sr, $Si, $a, $b; ϵ=$ϵ) # allocates. Used only to generate `citp`.
-@btime ITP.update_itp!($citp, $cbuf, $Sr, $Si; ϵ=$ϵ) # Does not allocate.
+@btime ITP.Interpolator1DComplex($cbuf, $Sr, $Si, $a, $b; ϵ = $ϵ) # allocates. Used only to generate `citp`.
+@btime ITP.update_itp!($citp, $cbuf, $Sr, $Si; ϵ = $ϵ) # Does not allocate.
 
 println()
 println("2D, real-valued")
@@ -110,8 +113,8 @@ f = (xx, yy) -> sinc((xx)^2 + (yy)^2)
 S = [f(x1, x2) for x1 in t_range1, x2 in t_range2]
 
 # fit coefficients.
-buf = ITP.FitBuffer2D(T, size(S); N_padding=(10, 9))
-itp2D = ITP.Interpolator2D(buf, S, a1, b1, a2, b2; ϵ=ϵ)
+buf = ITP.FitBuffer2D(T, size(S); N_padding = (10, 9))
+itp2D = ITP.Interpolator2D(buf, S, a1, b1, a2, b2; ϵ = ϵ)
 
 # fit residual.
 q_S = [ITP.query2D(x1, x2, itp2D) for x1 in t_range1, x2 in t_range2]
@@ -129,14 +132,14 @@ tq_range2 = LinRange(aq2, bq2, Nq2)
 results = [ITP.query2D(x1, x2, itp2D) for x1 in tq_range1, x2 in tq_range2]
 
 # sanity check.
-ITP.update_itp!(itp2D, buf, S; ϵ=ϵ) # fits and overwrites existing coefficients.
+ITP.update_itp!(itp2D, buf, S; ϵ = ϵ) # fits and overwrites existing coefficients.
 results2 = [ITP.query2D(x1, x2, itp2D) for x1 in tq_range1, x2 in tq_range2]
 @show norm(results - results2) # should be zero.
 
 # Allocation benchmark for allocations.
 using BenchmarkTools
-@btime ITP.Interpolator2D($buf, $S, $a1, $b1, $a2, $b2; ϵ=$ϵ) # allocates. Used only to generate `itp2D`.
-@btime ITP.update_itp!($itp2D, $buf, $S; ϵ=$ϵ) # Does not allocate.
+@btime ITP.Interpolator2D($buf, $S, $a1, $b1, $a2, $b2; ϵ = $ϵ) # allocates. Used only to generate `itp2D`.
+@btime ITP.update_itp!($itp2D, $buf, $S; ϵ = $ϵ) # Does not allocate.
 
 println()
 println("2D, complex-valued")
@@ -159,7 +162,7 @@ Sr = [f_real(x1, x2) for x1 in t_range1, x2 in t_range2]
 Si = [f_imag(x1, x2) for x1 in t_range1, x2 in t_range2]
 
 # fit coefficients.
-cbuf = ITP.FitBuffer2D(T, size(Sr); N_padding=(8, 7))
+cbuf = ITP.FitBuffer2D(T, size(Sr); N_padding = (8, 7))
 citp = ITP.Interpolator2DComplex(ITP.LinearPadding(), ITP.ConstantExtrapolation(), cbuf, Sr, Si, first(t_range1), last(t_range1), first(t_range2), last(t_range2))
 
 # This also works: ITP.Interpolator2DComplex(cbuf, Sr, Si, first(t_range1), last(t_range1), first(t_range2), last(t_range2))
@@ -179,14 +182,14 @@ tq_range2 = LinRange(query_lb2 - extrapolation_len, query_ub2 + extrapolation_le
 results = [ITP.query2D(x1, x2, citp) for x1 in tq_range1, x2 in tq_range2]
 
 # sanity check.
-ITP.update_itp!(citp, cbuf, Sr, Si; ϵ=ϵ) # fits and overwrites existing coefficients.
+ITP.update_itp!(citp, cbuf, Sr, Si; ϵ = ϵ) # fits and overwrites existing coefficients.
 results2 = [ITP.query2D(x1, x2, citp) for x1 in tq_range1, x2 in tq_range2]
 @show norm(results - results2) # should be zero.
 
 # Allocation benchmark for allocations.
 using BenchmarkTools
 a1, a2, b1, b2 = first(t_range1), last(t_range1), first(t_range2), last(t_range2)
-@btime ITP.Interpolator2DComplex($cbuf, $Sr, $Si, $a1, $b1, $a2, $b2; ϵ=$ϵ) # allocates. Used only to generate `citp`.
-@btime ITP.update_itp!($citp, $cbuf, $Sr, $Si; ϵ=$ϵ) # Does not allocate.
+@btime ITP.Interpolator2DComplex($cbuf, $Sr, $Si, $a1, $b1, $a2, $b2; ϵ = $ϵ) # allocates. Used only to generate `citp`.
+@btime ITP.update_itp!($citp, $cbuf, $Sr, $Si; ϵ = $ϵ) # Does not allocate.
 
 nothing

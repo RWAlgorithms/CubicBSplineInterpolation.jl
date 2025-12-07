@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright © 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
+# Copyright © 2025 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
 
 
 if !isdefined(Main, :CubicBSplineInterpolation)
@@ -15,7 +15,7 @@ const T = Float64
 #const T = Float32
 
 #ϵ = T(1e-16)
-ϵ = T(1e-8)
+ϵ = T(1.0e-8)
 Nq = 757
 N = 1000
 #N = 7 # debug
@@ -25,7 +25,7 @@ t_range = LinRange(a, b, N)
 #f = xx->sinc(sin((xx/5)^3+(xx/20)^2+4.32)) # not bad
 #f = xx->sin(xx) # not bad.
 #f = xx->(exp(-(1/17)*(xx-3)^2) +55) # runge effect near right boundary.
-f = xx->exp(-(1/17)*(xx-3)^2) # runge effect near right boundary.
+f = xx -> exp(-(1 / 17) * (xx - 3)^2) # runge effect near right boundary.
 #f = xx->(exp(-(1/17)*(xx-3)^2) + sin(xx-1.2)) # runge effect near right boundary.
 
 #f = xx->exp(-(1/17)*(xx/3)^2) # not bad.
@@ -73,7 +73,7 @@ tq_range = LinRange(query_lb, query_ub, Nq)
 
 # query.
 #query_reference_t = collect( ITP.query(u, c, A) for u in tq_range )
-query1D_t = collect( ITP.query1D(u, itp1D) for u in tq_range )
+query1D_t = collect(ITP.query1D(u, itp1D) for u in tq_range)
 
 f_tq = f.(tq_range) # oracle
 
@@ -92,14 +92,14 @@ PLT.legend()
 
 converts compact domain x ∈ [a,b] to compact domain out ∈ [c,d].
 """
-function convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T where T <: Real
-    return (x-a)*(d-c)/(b-a)+c
+function convertcompactdomain(x::T, a::T, b::T, c::T, d::T)::T where {T <: Real}
+    return (x - a) * (d - c) / (b - a) + c
 end
 
 test_lb = a - T(4)
 test_ub = b + T(4)
 N_tests = 1000
-xs = [ convertcompactdomain(rand(rng, T), zero(T), one(T), test_lb, test_ub) for _ = 1:N_tests ]
+xs = [ convertcompactdomain(rand(rng, T), zero(T), one(T), test_lb, test_ub) for _ in 1:N_tests ]
 
 out = [ ITP.query1D_parameter_derivatives(x, itp1D) for x in xs ]
 
@@ -110,13 +110,13 @@ function query1D_params_as_input!(itp, c::AbstractVector, x0::AbstractFloat)
     return ITP.query1D(x0, itp)
 end
 
-zero_tol = T(1e-10)
+zero_tol = T(1.0e-10)
 x_test = xs[1]
 
 function test_param_derivatives!(itp1D, c_test, x_test, zero_tol)
 
     ITP.update_coeffs!(itp1D, c_test)
-    h = cc->query1D_params_as_input!(itp1D, cc, x_test)
+    h = cc -> query1D_params_as_input!(itp1D, cc, x_test)
     dq_dc_ND = FiniteDiff.finite_difference_gradient(h, c_test)
 
     q_x_oracle = ITP.query1D(x_test, itp1D)
@@ -131,15 +131,15 @@ function test_param_derivatives!(itp1D, c_test, x_test, zero_tol)
     r[k4] -= d4
     #@show norm(r) # should be zero if analytic gradient works.
     @assert norm(r) < zero_tol
-    @assert abs(q_x_oracle - q_x) < zero_tol
+    return @assert abs(q_x_oracle - q_x) < zero_tol
 end
 
 # The following should throw an error if the analytical and numerical derivatives don't match.
 N_coeffs_to_test = 50
-for _ = 1:N_coeffs_to_test
-    
+for _ in 1:N_coeffs_to_test
+
     randn!(rng, c)
-    
+
     for x in xs
         test_param_derivatives!(itp1D, c, x, zero_tol)
     end

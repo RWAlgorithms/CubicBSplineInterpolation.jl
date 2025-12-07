@@ -3,12 +3,12 @@
 
 module CubicBSplineInterpolation
 
-function twothirds(::Type{T}) where T <: AbstractFloat
-    return T(2)/T(3)
+function twothirds(::Type{T}) where {T <: AbstractFloat}
+    return T(2) / T(3)
 end
 
-function half(::Type{T}) where T <: AbstractFloat
-    return one(T)/T(2)
+function half(::Type{T}) where {T <: AbstractFloat}
+    return one(T) / T(2)
 end
 
 
@@ -25,21 +25,28 @@ include("derivatives2D.jl")
 
 include("extrapolate.jl")
 
-export IntervalConversion, 
-get_coeffs, query1D, query2D,
-FitBuffer1D, SetupBuffer2D,
-Interpolator1D, Interpolator2D,
-Interpolator1DComplex, Interpolator2DComplex,
+include("itp_only.jl")
 
-# padding options
-LinearPadding, ConstantPadding, Lagrange4Padding,
+export IntervalConversion,
+    get_coeffs, query1D, query2D,
+    FitBuffer1D, SetupBuffer2D,
+    Interpolator1D, Interpolator2D,
+    Interpolator1DComplex, Interpolator2DComplex,
 
-# extrapolation options
-ZeroExtrapolation, ConstantExtrapolation,
-QuadraticExtrapolator1D
+    # padding options
+    LinearPadding, ConstantPadding, Lagrange4Padding,
+
+    # extrapolation options
+    ZeroExtrapolation, ConstantExtrapolation,
+    QuadraticExtrapolator1D,
+
+    # minimalist inpolation-only query
+    itp1D, itp1D_derivative1, itp1D_parameter_derivatives
 
 # update coeffs directly
 public update_coeffs!, get_num_coeffs,
-query1D_parameter_derivatives
+    query1D_parameter_derivatives,
+    get_coeffs_range,
+    get_query_bounds
 
 end # module CubicBSplineInterpolation

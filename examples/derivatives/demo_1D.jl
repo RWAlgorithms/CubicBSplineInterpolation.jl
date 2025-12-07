@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright © 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
+# Copyright © 2025 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
 
 
 if !isdefined(Main, :CubicBSplineInterpolation)
@@ -13,7 +13,7 @@ const T = Float64
 #const T = Float32
 
 #ϵ = T(1e-16)
-ϵ = T(1e-8)
+ϵ = T(1.0e-8)
 Nq = 757
 N = 1000
 #N = 7 # debug
@@ -23,7 +23,7 @@ t_range = LinRange(a, b, N)
 #f = xx->sinc(sin((xx/5)^3+(xx/20)^2+4.32)) # not bad
 #f = xx->sin(xx) # not bad.
 #f = xx->(exp(-(1/17)*(xx-3)^2) +55) # runge effect near right boundary.
-f = xx->exp(-(1/17)*(xx-3)^2) # runge effect near right boundary.
+f = xx -> exp(-(1 / 17) * (xx - 3)^2) # runge effect near right boundary.
 #f = xx->(exp(-(1/17)*(xx-3)^2) + sin(xx-1.2)) # runge effect near right boundary.
 
 #f = xx->exp(-(1/17)*(xx/3)^2) # not bad.
@@ -76,7 +76,7 @@ N = 1000
 c_back = copy(itp1D.coeffs)
 s_random = randn(Random.Xoshiro(0), T, size(s))
 ITP.update_itp!(padding_option, extrapolation_option, itp1D, buf, s_random; ϵ = ϵ)
-@assert norm(c_back - itp1D.coeffs) > eps(T)*10
+@assert norm(c_back - itp1D.coeffs) > eps(T) * 10
 
 ITP.update_itp!(padding_option, extrapolation_option, itp1D, buf, s; ϵ = ϵ)
 @assert norm(c_back - itp1D.coeffs) < eps(T)
@@ -84,8 +84,8 @@ ITP.update_itp!(padding_option, extrapolation_option, itp1D, buf, s; ϵ = ϵ)
 
 # residual error. Should be close to zero.
 ts = tmp_r
-q_ts = collect( ITP.query1D(u, itp1D) for u in ts )
-@show norm(s - q_ts)/norm(s) # 
+q_ts = collect(ITP.query1D(u, itp1D) for u in ts)
+@show norm(s - q_ts) / norm(s) #
 
 
 # Query range.
@@ -97,7 +97,7 @@ tq_range = LinRange(query_lb, query_ub, Nq)
 
 # query.
 #query_reference_t = collect( ITP.query(u, c, A) for u in tq_range )
-query1D_t = collect( ITP.query1D(u, itp1D) for u in tq_range )
+query1D_t = collect(ITP.query1D(u, itp1D) for u in tq_range)
 
 f_tq = f.(tq_range) # oracle
 
@@ -113,19 +113,19 @@ PLT.legend()
 
 
 println("Relative l-2 error over the interpolation region.")
-@show norm(f_tq - query1D_t)/norm(f_tq)
+@show norm(f_tq - query1D_t) / norm(f_tq)
 
 #@assert 2 ==23
 
 # # Compare with Interpolations.jl
 
-_, problem_ind = findmax(abs.(f_tq- query1D_t))
+_, problem_ind = findmax(abs.(f_tq - query1D_t))
 xq = tq_range[problem_ind]
 
 # Interpolations.jl
 import Interpolations
 
-function setup_itp(A_in::Memory{T}, A_r) where T <: AbstractFloat
+function setup_itp(A_in::Memory{T}, A_r) where {T <: AbstractFloat}
 
     A = Array(A_in)
     real_itp = Interpolations.interpolate(A, Interpolations.BSpline(Interpolations.Cubic(Interpolations.Line(Interpolations.OnGrid()))))
@@ -139,7 +139,7 @@ end
 itp = setup_itp(s, t_range)
 
 println("Discrepancy between Interpolations.jl and our result at our worse fit location of `xq` = $(xq):")
-@show abs(itp(xq) - ITP.query1D(xq, itp1D))/abs(itp(xq))
+@show abs(itp(xq) - ITP.query1D(xq, itp1D)) / abs(itp(xq))
 
 # println("Query timing:")
 # @btime ITP.query1D($xq, $itp1D)
@@ -173,8 +173,6 @@ PLT.plot(tq_range, query1D_t, label = "query1D")
 PLT.plot(tq_range, itp_tq, "--", label = "Interpolations.jl")
 PLT.title("Interpolation results")
 PLT.legend()
-
-# TODO I am here. look into why Interpolation's coeffs are rock solid.
 
 PLT.figure(fig_num)
 fig_num += 1
@@ -215,7 +213,7 @@ itp_tq = itp.(tq_range)
 # tmp = itp1D.coeffs[(length(itp1D.coeffs)-M0+1)]
 # fill!(v, tmp)
 
-query1D_t = collect( ITP.query1D(u, itp1D) for u in tq_range )
+query1D_t = collect(ITP.query1D(u, itp1D) for u in tq_range)
 f_tq = f.(tq_range)
 
 
@@ -232,7 +230,7 @@ PLT.legend()
 mq = tq_range
 dq_tq = [ ITP.query1D_derivative1(u, itp1D) for u in mq ]
 
-h = xx->ITP.query1D(xx, itp1D)
+h = xx -> ITP.query1D(xx, itp1D)
 dq_tq_ND = [ FiniteDiff.finite_difference_derivative(h, u) for u in mq ]
 
 PLT.figure(fig_num)
@@ -243,13 +241,13 @@ PLT.title("First derivatives: numerical vs analytical")
 PLT.legend()
 
 println("First derivative discrepancy: Numerical and implemented analytical derivative")
-@show norm(dq_tq - dq_tq_ND)/norm(dq_tq_ND)
+@show norm(dq_tq - dq_tq_ND) / norm(dq_tq_ND)
 
 # Second derivative
 mq = tq_range
 d2q_tq = [ ITP.query1D_derivative2(u, itp1D) for u in mq ]
 
-dh = xx->FiniteDiff.finite_difference_derivative(h, xx) 
+dh = xx -> FiniteDiff.finite_difference_derivative(h, xx)
 d2q_tq_ND = [ FiniteDiff.finite_difference_derivative(dh, u) for u in mq ]
 
 PLT.figure(fig_num)
@@ -260,7 +258,7 @@ PLT.title("Second derivatives: numerical vs analytical")
 PLT.legend()
 
 println("Second derivative discrepancy: Numerical and implemented analytical derivative")
-@show norm(d2q_tq - d2q_tq_ND)/norm(d2q_tq_ND)
+@show norm(d2q_tq - d2q_tq_ND) / norm(d2q_tq_ND)
 println()
 
 # # Complex values, 1D
@@ -268,9 +266,9 @@ println()
 println("Complex-valued case.")
 
 # Specify oracles for the real and imaginary parts.
-f_real = (xx)->sinc((xx)^2)
-f_imag = (xx)->tanh((xx)^2)
-f = (xx)->Complex(sinc((xx)^2), tanh((xx)^2)) # This allocates for some reason. Perhaps due to "boxing". Complex(f_real(xx,yy), f_imag(xx,yy))
+f_real = (xx) -> sinc((xx)^2)
+f_imag = (xx) -> tanh((xx)^2)
+f = (xx) -> Complex(sinc((xx)^2), tanh((xx)^2)) # This allocates for some reason. Perhaps due to "boxing". Complex(f_real(xx,yy), f_imag(xx,yy))
 
 t_range = LinRange(T(-3), T(3), 1000)
 
@@ -291,8 +289,8 @@ ci_back = copy(citp.imag_coeffs)
 Sr_random = randn(Random.Xoshiro(0), T, size(Sr))
 Si_random = randn(Random.Xoshiro(0), T, size(Si))
 ITP.update_itp!(citp, cbuf, Sr_random, Si_random; ϵ = ϵ)
-@assert norm(cr_back - citp.real_coeffs) > eps(T)*10
-@assert norm(ci_back - citp.imag_coeffs) > eps(T)*10
+@assert norm(cr_back - citp.real_coeffs) > eps(T) * 10
+@assert norm(ci_back - citp.imag_coeffs) > eps(T) * 10
 
 ITP.update_itp!(citp, cbuf, Sr, Si; ϵ = ϵ)
 @assert norm(cr_back - citp.real_coeffs) < eps(T)
@@ -300,7 +298,7 @@ ITP.update_itp!(citp, cbuf, Sr, Si; ϵ = ϵ)
 
 
 # check interpolation fit.
-qc = xx->ITP.query1D(xx, citp)
+qc = xx -> ITP.query1D(xx, citp)
 qc_s = qc.(t_range)
 println("Interpolation fit residual:")
 @show norm(Sr .+ im .* Si - qc_s) # TODO make into test.
@@ -309,14 +307,14 @@ println()
 
 # determine query intervals.
 query_lb, query_ub = ITP.get_itp_interval(citp)
-tq_range = LinRange(query_lb-0.1, query_ub+0.1, 10000)
+tq_range = LinRange(query_lb - 0.1, query_ub + 0.1, 10000)
 
 Yq = [ ITP.query1D(x1, citp) for x1 in tq_range ]
 Sq = [ f(x1) for x1 in tq_range ]
-@show norm(Sq-Yq)/norm(Sq)
+@show norm(Sq - Yq) / norm(Sq)
 
 # Choose the place where we have the most discrepancy as our single query point.
-_, problem_index = findmax(abs.(Sq-Yq))
+_, problem_index = findmax(abs.(Sq - Yq))
 xq = tq_range[problem_index]
 
 # visualize.
@@ -339,8 +337,8 @@ mq = tq_range
 dq_tq_real = [ ITP.query1D_derivative1(u, citp)[1] for u in mq ]
 dq_tq_imag = [ ITP.query1D_derivative1(u, citp)[2] for u in mq ]
 
-hr = xx->real(ITP.query1D(xx, citp))
-hi = xx->imag(ITP.query1D(xx, citp))
+hr = xx -> real(ITP.query1D(xx, citp))
+hi = xx -> imag(ITP.query1D(xx, citp))
 dq_tq_ND_real = [ FiniteDiff.finite_difference_derivative(hr, u) for u in mq ]
 dq_tq_ND_imag = [ FiniteDiff.finite_difference_derivative(hi, u) for u in mq ]
 
@@ -354,8 +352,8 @@ PLT.title("First derivatives: numerical vs analytical")
 PLT.legend()
 
 println("First derivative discrepancy: Numerical and implemented analytical derivative")
-@show norm(dq_tq_real - dq_tq_ND_real)/norm(dq_tq_ND_real)
-@show norm(dq_tq_imag - dq_tq_ND_imag)/norm(dq_tq_ND_imag)
+@show norm(dq_tq_real - dq_tq_ND_real) / norm(dq_tq_ND_real)
+@show norm(dq_tq_imag - dq_tq_ND_imag) / norm(dq_tq_ND_imag)
 
 # Second derivative
 mq = tq_range
@@ -364,12 +362,12 @@ d2q_tq_imag = [ ITP.query1D_derivative2(u, citp)[2] for u in mq ]
 
 # # hr = xx->ITP.query1D_derivative1(xx, citp)[1]
 # # hi = xx->ITP.query1D_derivative1(xx, citp)[2]
-# dhr = xx->FiniteDiff.finite_difference_derivative(hr, xx) 
-# dhi = xx->FiniteDiff.finite_difference_derivative(hi, xx) 
+# dhr = xx->FiniteDiff.finite_difference_derivative(hr, xx)
+# dhi = xx->FiniteDiff.finite_difference_derivative(hi, xx)
 # d2q_tq_ND_real = [ FiniteDiff.finite_difference_derivative(dhr, u) for u in mq ]
 # d2q_tq_ND_imag = [ FiniteDiff.finite_difference_derivative(dhi, u) for u in mq ]
-d2q_tq_ND_real = [ FiniteDiff.finite_difference_hessian(uu->hr(uu[1]), [u;])[1] for u in mq ]
-d2q_tq_ND_imag = [ FiniteDiff.finite_difference_hessian(uu->hi(uu[1]), [u;])[1] for u in mq ]
+d2q_tq_ND_real = [ FiniteDiff.finite_difference_hessian(uu -> hr(uu[1]), [u;])[1] for u in mq ]
+d2q_tq_ND_imag = [ FiniteDiff.finite_difference_hessian(uu -> hi(uu[1]), [u;])[1] for u in mq ]
 
 
 PLT.figure(fig_num)
@@ -382,17 +380,17 @@ PLT.title("Second derivatives: numerical vs analytical")
 PLT.legend()
 
 println("Second derivative discrepancy: Numerical and implemented analytical derivative")
-@show norm(d2q_tq_real - d2q_tq_ND_real)/norm(d2q_tq_ND_real)
-@show norm(d2q_tq_imag - d2q_tq_ND_imag)/norm(d2q_tq_ND_imag)
+@show norm(d2q_tq_real - d2q_tq_ND_real) / norm(d2q_tq_ND_real)
+@show norm(d2q_tq_imag - d2q_tq_ND_imag) / norm(d2q_tq_ND_imag)
 println()
 
 # ## Compare with Interpolations
 
 function setup_itp(
-    S_real::Union{Vector{T}, Memory{T}},
-    S_imag::Union{Vector{T}, Memory{T}},
-    A_r,
-    ) where T <: AbstractFloat
+        S_real::Union{Vector{T}, Memory{T}},
+        S_imag::Union{Vector{T}, Memory{T}},
+        A_r,
+    ) where {T <: AbstractFloat}
 
     real_itp = Interpolations.interpolate(S_real, Interpolations.BSpline(Interpolations.Cubic(Interpolations.Line(Interpolations.OnGrid()))))
     real_sitp = Interpolations.scale(real_itp, A_r)
@@ -416,7 +414,7 @@ end
 
 itp_real, itp_imag = setup_itp(Sr, Si, t_range)
 itp_struct = ComplexItp(itp_real, itp_imag)
-itp = (xx)->query_itp(xx, itp_struct) # doing Complex(itp_real(xx,yy), itp_imag(xx,yy)) leads to allocation for some reason.
+itp = (xx) -> query_itp(xx, itp_struct) # doing Complex(itp_real(xx,yy), itp_imag(xx,yy)) leads to allocation for some reason.
 
 out_itp = itp(xq)
 out_query1D = ITP.query1D(xq, citp)

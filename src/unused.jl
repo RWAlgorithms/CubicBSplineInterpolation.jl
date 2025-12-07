@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2024 Roy Chih Chung Wang <roy.c.c.wang@proton.me>
 
-function query_interior_old(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2::IntervalConversion{T}) where {T<:AbstractFloat}
+function query_interior_old(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2::IntervalConversion{T}) where {T <: AbstractFloat}
 
     # # Transform clamp the input coordinates.
     x1 = to_std_interval(x1_in, A1.a, A1.d_div_bma)
@@ -25,16 +25,16 @@ function query_interior_old(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2
 
     # ### iterate rows.
     k1 = k1_lb
-    out11 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out11 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     k1 = k1_lb + 1
-    out21 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out21 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     k1 = k1_lb + 2
-    out31 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out31 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     k1 = k1_lb + 3
-    out41 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out41 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     # ## Fix column
     k2 = k2_lb + 1
@@ -42,16 +42,16 @@ function query_interior_old(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2
 
     # ### iterate rows.
     k1 = k1_lb
-    out12 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out12 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     k1 = k1_lb + 1
-    out22 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out22 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     k1 = k1_lb + 2
-    out32 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out32 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     k1 = k1_lb + 3
-    out42 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out42 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     # ## Fix column
     k2 = k2_lb + 2
@@ -59,16 +59,16 @@ function query_interior_old(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2
 
     # ### iterate rows.
     k1 = k1_lb
-    out13 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out13 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     k1 = k1_lb + 1
-    out23 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out23 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     k1 = k1_lb + 2
-    out33 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out33 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     k1 = k1_lb + 3
-    out43 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
+    out43 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in01(x2_minus_k2)
 
     # ## Fix column
     k2 = k2_lb + 3
@@ -76,26 +76,26 @@ function query_interior_old(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2
 
     # ### iterate rows.
     k1 = k1_lb
-    out14 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out14 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     k1 = k1_lb + 1
-    out24 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out24 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     k1 = k1_lb + 2
-    out34 = C[begin+k1, begin+k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out34 = C[begin + k1, begin + k2] * eval_cubic_spline_in01(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     k1 = k1_lb + 3
-    out44 = C[begin+k1, begin+k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
+    out44 = C[begin + k1, begin + k2] * eval_cubic_spline_in12(x1 - k1) * eval_cubic_spline_in12(x2_minus_k2)
 
     return out11 + out21 + out31 + out41 +
-           out12 + out22 + out32 + out42 +
-           out13 + out23 + out33 + out43 +
-           out14 + out24 + out34 + out44
+        out12 + out22 + out32 + out42 +
+        out13 + out23 + out33 + out43 +
+        out14 + out24 + out34 + out44
 end
 
 
 # somehow, slower. I suspect it is the bounds check on C and the indices `k1_lb_1`, `k1_lb_2`, being determined at run-time, causing many different bounds check on `C`.
-function query_interior2(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2::IntervalConversion{T}) where {T<:AbstractFloat}
+function query_interior2(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2::IntervalConversion{T}) where {T <: AbstractFloat}
 
     # # Transform clamp the input coordinates.
     x1 = to_std_interval(x1_in, A1.a, A1.d_div_bma)
@@ -134,44 +134,44 @@ function query_interior2(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2::I
     spline1_3 = eval_cubic_spline_in12(x1 - k1_lb_3)
 
     # The 4x4 = 16 terms.
-    out00 = C[begin+k1_lb, begin+k2_lb] * spline1_0 * spline2_0
-    out10 = C[begin+k1_lb_1, begin+k2_lb] * spline1_1 * spline2_0
-    out20 = C[begin+k1_lb_2, begin+k2_lb] * spline1_2 * spline2_0
-    out30 = C[begin+k1_lb_3, begin+k2_lb] * spline1_3 * spline2_0
+    out00 = C[begin + k1_lb, begin + k2_lb] * spline1_0 * spline2_0
+    out10 = C[begin + k1_lb_1, begin + k2_lb] * spline1_1 * spline2_0
+    out20 = C[begin + k1_lb_2, begin + k2_lb] * spline1_2 * spline2_0
+    out30 = C[begin + k1_lb_3, begin + k2_lb] * spline1_3 * spline2_0
 
-    out01 = C[begin+k1_lb, begin+k2_lb_1] * spline1_0 * spline2_1
-    out11 = C[begin+k1_lb_1, begin+k2_lb_1] * spline1_1 * spline2_1
-    out21 = C[begin+k1_lb_2, begin+k2_lb_1] * spline1_2 * spline2_1
-    out31 = C[begin+k1_lb_3, begin+k2_lb_1] * spline1_3 * spline2_1
+    out01 = C[begin + k1_lb, begin + k2_lb_1] * spline1_0 * spline2_1
+    out11 = C[begin + k1_lb_1, begin + k2_lb_1] * spline1_1 * spline2_1
+    out21 = C[begin + k1_lb_2, begin + k2_lb_1] * spline1_2 * spline2_1
+    out31 = C[begin + k1_lb_3, begin + k2_lb_1] * spline1_3 * spline2_1
 
-    out02 = C[begin+k1_lb, begin+k2_lb_2] * spline1_0 * spline2_2
-    out12 = C[begin+k1_lb_1, begin+k2_lb_2] * spline1_1 * spline2_2
-    out22 = C[begin+k1_lb_2, begin+k2_lb_2] * spline1_2 * spline2_2
-    out32 = C[begin+k1_lb_3, begin+k2_lb_2] * spline1_3 * spline2_2
+    out02 = C[begin + k1_lb, begin + k2_lb_2] * spline1_0 * spline2_2
+    out12 = C[begin + k1_lb_1, begin + k2_lb_2] * spline1_1 * spline2_2
+    out22 = C[begin + k1_lb_2, begin + k2_lb_2] * spline1_2 * spline2_2
+    out32 = C[begin + k1_lb_3, begin + k2_lb_2] * spline1_3 * spline2_2
 
-    out03 = C[begin+k1_lb, begin+k2_lb_3] * spline1_0 * spline2_3
-    out13 = C[begin+k1_lb_1, begin+k2_lb_3] * spline1_1 * spline2_3
-    out23 = C[begin+k1_lb_2, begin+k2_lb_3] * spline1_2 * spline2_3
-    out33 = C[begin+k1_lb_3, begin+k2_lb_3] * spline1_3 * spline2_3
+    out03 = C[begin + k1_lb, begin + k2_lb_3] * spline1_0 * spline2_3
+    out13 = C[begin + k1_lb_1, begin + k2_lb_3] * spline1_1 * spline2_3
+    out23 = C[begin + k1_lb_2, begin + k2_lb_3] * spline1_2 * spline2_3
+    out33 = C[begin + k1_lb_3, begin + k2_lb_3] * spline1_3 * spline2_3
 
     return out00 + out10 + out20 + out30 +
-           out01 + out11 + out21 + out31 +
-           out02 + out12 + out22 + out32 +
-           out03 + out13 + out23 + out33
+        out01 + out11 + out21 + out31 +
+        out02 + out12 + out22 + out32 +
+        out03 + out13 + out23 + out33
 end
 
 
-function query_interior2(u1::T, u2::T, itp::Interpolator2D{T}) where {T<:AbstractFloat}
+function query_interior2(u1::T, u2::T, itp::Interpolator2D{T}) where {T <: AbstractFloat}
     return query_interior2(u1, u2, itp.coeffs, itp.x1_query_cache, itp.x2_query_cache)
 end
 
-function query_interior_original(u1::T, u2::T, itp::Interpolator2D{T}) where {T<:AbstractFloat}
+function query_interior_original(u1::T, u2::T, itp::Interpolator2D{T}) where {T <: AbstractFloat}
     return query_interior_original(u1, u2, itp.coeffs, itp.x1_query_cache, itp.x2_query_cache)
 end
 
 # Note: could use a macro to generate the 25 terms.
 # x1 is the row direction, x2 is the column direction.
-function query_interior_original(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2::IntervalConversion{T}) where {T<:AbstractFloat}
+function query_interior_original(x1_in::T, x2_in::T, C, A1::IntervalConversion{T}, A2::IntervalConversion{T}) where {T <: AbstractFloat}
 
     # # Transform clamp the input coordinates.
     x1 = to_std_interval(x1_in, A1.a, A1.d_div_bma)
@@ -202,30 +202,30 @@ function query_interior_original(x1_in::T, x2_in::T, C, A1::IntervalConversion{T
     spline1_3 = eval_cubic_spline_in12(x1 - k1_lb - 3) # x1 - (k1_lb + 3)
 
     # The 4x4 = 16 terms.
-    out00 = C[begin+k1_lb, begin+k2_lb] * spline1_0 * spline2_0
-    out10 = C[begin+k1_lb+1, begin+k2_lb] * spline1_1 * spline2_0
-    out20 = C[begin+k1_lb+2, begin+k2_lb] * spline1_2 * spline2_0
-    out30 = C[begin+k1_lb+3, begin+k2_lb] * spline1_3 * spline2_0
+    out00 = C[begin + k1_lb, begin + k2_lb] * spline1_0 * spline2_0
+    out10 = C[begin + k1_lb + 1, begin + k2_lb] * spline1_1 * spline2_0
+    out20 = C[begin + k1_lb + 2, begin + k2_lb] * spline1_2 * spline2_0
+    out30 = C[begin + k1_lb + 3, begin + k2_lb] * spline1_3 * spline2_0
 
-    out01 = C[begin+k1_lb, begin+k2_lb+1] * spline1_0 * spline2_1
-    out11 = C[begin+k1_lb+1, begin+k2_lb+1] * spline1_1 * spline2_1
-    out21 = C[begin+k1_lb+2, begin+k2_lb+1] * spline1_2 * spline2_1
-    out31 = C[begin+k1_lb+3, begin+k2_lb+1] * spline1_3 * spline2_1
+    out01 = C[begin + k1_lb, begin + k2_lb + 1] * spline1_0 * spline2_1
+    out11 = C[begin + k1_lb + 1, begin + k2_lb + 1] * spline1_1 * spline2_1
+    out21 = C[begin + k1_lb + 2, begin + k2_lb + 1] * spline1_2 * spline2_1
+    out31 = C[begin + k1_lb + 3, begin + k2_lb + 1] * spline1_3 * spline2_1
 
-    out02 = C[begin+k1_lb, begin+k2_lb+2] * spline1_0 * spline2_2
-    out12 = C[begin+k1_lb+1, begin+k2_lb+2] * spline1_1 * spline2_2
-    out22 = C[begin+k1_lb+2, begin+k2_lb+2] * spline1_2 * spline2_2
-    out32 = C[begin+k1_lb+3, begin+k2_lb+2] * spline1_3 * spline2_2
+    out02 = C[begin + k1_lb, begin + k2_lb + 2] * spline1_0 * spline2_2
+    out12 = C[begin + k1_lb + 1, begin + k2_lb + 2] * spline1_1 * spline2_2
+    out22 = C[begin + k1_lb + 2, begin + k2_lb + 2] * spline1_2 * spline2_2
+    out32 = C[begin + k1_lb + 3, begin + k2_lb + 2] * spline1_3 * spline2_2
 
-    out03 = C[begin+k1_lb, begin+k2_lb+3] * spline1_0 * spline2_3
-    out13 = C[begin+k1_lb+1, begin+k2_lb+3] * spline1_1 * spline2_3
-    out23 = C[begin+k1_lb+2, begin+k2_lb+3] * spline1_2 * spline2_3
-    out33 = C[begin+k1_lb+3, begin+k2_lb+3] * spline1_3 * spline2_3
+    out03 = C[begin + k1_lb, begin + k2_lb + 3] * spline1_0 * spline2_3
+    out13 = C[begin + k1_lb + 1, begin + k2_lb + 3] * spline1_1 * spline2_3
+    out23 = C[begin + k1_lb + 2, begin + k2_lb + 3] * spline1_2 * spline2_3
+    out33 = C[begin + k1_lb + 3, begin + k2_lb + 3] * spline1_3 * spline2_3
 
     return out00 + out10 + out20 + out30 +
-           out01 + out11 + out21 + out31 +
-           out02 + out12 + out22 + out32 +
-           out03 + out13 + out23 + out33
+        out01 + out11 + out21 + out31 +
+        out02 + out12 + out22 + out32 +
+        out03 + out13 + out23 + out33
 end
 
 
@@ -236,14 +236,14 @@ function transition_weight(x, a, b)
     return transition_weight((x - a) / (b - a))
 end
 
-function eval_ψ(x::T) where {T<:AbstractFloat}
+function eval_ψ(x::T) where {T <: AbstractFloat}
     if x > 0
         return exp(-one(T) / x)
     end
     return zero(T)
 end
 
-function transition_weight(x::T) where {T<:AbstractFloat}
+function transition_weight(x::T) where {T <: AbstractFloat}
 
     if x < 0
         return zero(T)
@@ -259,14 +259,14 @@ end
 
 # no longer used. no mirror image required.
 #### move this idea to another repo.
-function eval_reflection_etp(ts::LinRange, samples::AbstractVector{T}) where {T<:AbstractFloat}
+function eval_reflection_etp(ts::LinRange, samples::AbstractVector{T}) where {T <: AbstractFloat}
 
     Δt = step(ts)
     order = 4
 
     # # the larger boundary
-    xs = ts[length(ts)-4:length(ts)]
-    ys = view(samples, length(ts)-4:length(ts))
+    xs = ts[(length(ts) - 4):length(ts)]
+    ys = view(samples, (length(ts) - 4):length(ts))
     w0, w1, w2, w3, w4 = setup_lagrange4(xs)
 
     a = xs[end]
@@ -290,8 +290,8 @@ function eval_reflection_etp(ts::LinRange, samples::AbstractVector{T}) where {T<
     # g(x) # x > b
 
     # # the larger boundary
-    xs = ts[1:(order+1)]
-    ys = view(samples, 1:(order+1))
+    xs = ts[1:(order + 1)]
+    ys = view(samples, 1:(order + 1))
     w0, w1, w2, w3, w4 = setup_lagrange4(xs)
 
     b = xs[begin]
@@ -318,7 +318,7 @@ end
 
 # For x ∈ [a,b], where (a,b,d) were used to create A.
 # Use only specialized splines.
-function query1D_formula(x_in::T, itp::Interpolator1D{T}) where {T<:AbstractFloat}
+function query1D_formula(x_in::T, itp::Interpolator1D{T}) where {T <: AbstractFloat}
     c, A = itp.coeffs, itp.query_cache
 
     x = to_std_interval(x_in, A.a, A.d_div_bma)
@@ -343,28 +343,28 @@ function query1D_formula(x_in::T, itp::Interpolator1D{T}) where {T<:AbstractFloa
     #out1 = c[begin + k]*eval_cubic_spline(x - k) # non-specialized.
     p = zero(T)
     if 1 <= 1 + k <= length(c)
-        p = c[begin+k]
+        p = c[begin + k]
     end
     out1 = p * eval_cubic_spline_in12(x - k)
 
     k = k_lb + 1
     p = zero(T)
     if 1 <= 1 + k <= length(c)
-        p = c[begin+k]
+        p = c[begin + k]
     end
     out2 = p * eval_cubic_spline_in01(x - k)
 
     k = k_lb + 2
     p = zero(T)
     if 1 <= 1 + k <= length(c)
-        p = c[begin+k]
+        p = c[begin + k]
     end
     out3 = p * eval_cubic_spline_in01(x - k)
 
     k = k_lb + 3
     p = zero(T)
     if 1 <= 1 + k <= length(c)
-        p = c[begin+k]
+        p = c[begin + k]
     end
     out4 = p * eval_cubic_spline_in12(x - k)
 
@@ -374,7 +374,7 @@ end
 
 #### backup
 
-function _get_coeffs!(Y::Matrix{T}, X::Matrix, buf1::AbstractVector, buf2::AbstractVector, S::Matrix{T}, ϵ::T) where {T<:AbstractFloat}
+function _get_coeffs!(Y::Matrix{T}, X::Matrix, buf1::AbstractVector, buf2::AbstractVector, S::Matrix{T}, ϵ::T) where {T <: AbstractFloat}
     length(buf1) == size(S, 1) || error("Length mismatch.")
     length(buf2) == size(S, 2) || error("Length mismatch.")
     size(Y) == size(X) == size(S) || error("Size mismatch.")
@@ -395,7 +395,7 @@ end
 
 # For x ∈ [a,b], where (a,b,d) were used to create A.
 # Full convolution. This is the reference formula, but we exclude the border 8 samples for query1D and query2D.
-function query(x_in::T, c::Memory{T}, A::IntervalConversion{T}) where {T<:AbstractFloat}
+function query(x_in::T, c::Memory{T}, A::IntervalConversion{T}) where {T <: AbstractFloat}
     x = to_std_interval(x_in, A.a, A.d_div_bma)
 
     out = zero(T)
@@ -410,7 +410,7 @@ end
 # These are incorrect.
 
 # specialized for 1 < abs(x) < 2 # incorrect result. possibly due to our choice of query bounds.
-function eval_d2B3_in12(x::T) where {T<:AbstractFloat}
+function eval_d2B3_in12(x::T) where {T <: AbstractFloat}
     if x > 0
         return -(2 - x)
         #return 2 + x
@@ -422,7 +422,7 @@ end
 
 # specialized for 1 < abs(x) < 2 # incorrect result. possibly due to our choice of query bounds.
 # specialized for 0 <= abs(x) < 1
-function eval_d2B3_in01(x::T) where {T<:AbstractFloat}
+function eval_d2B3_in01(x::T) where {T <: AbstractFloat}
     if x > 0
         return -2 + 3 * x
         #return -2 - 3*x
@@ -434,7 +434,7 @@ end
 
 # suspected incorrect
 # specialized for 1 < abs(x) < 2
-function eval_dB3_in12(x::T) where {T<:AbstractFloat}
+function eval_dB3_in12(x::T) where {T <: AbstractFloat}
     if x > 0
         return -half(T) * (2 - x)^2
     end
@@ -444,7 +444,7 @@ end
 
 # suspected incorrect
 # specialized for 0 <= abs(x) < 1
-function eval_dB3_in01(x::T) where {T<:AbstractFloat}
+function eval_dB3_in01(x::T) where {T <: AbstractFloat}
     if x > 0
         return -2 * x + T(3) / T(2) * x^2
     end
